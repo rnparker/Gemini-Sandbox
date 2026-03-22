@@ -17,6 +17,7 @@
             --accent-2y: #00ffcc; /* Neon Green */
             --accent-5y: #00ccff; /* Neon Blue */
             --accent-spread: #ffbd2e; /* Golden Yellow for Spread */
+            --accent-ma: #ffffff;    /* White for Moving Average */
             --button-active: #f0b90b;
         }
 
@@ -130,10 +131,28 @@
     });
 
     /**
+     * Helper to calculate Simple Moving Average
+     */
+    function calculateSMA(data, windowSize) {
+        let sma = [];
+        for (let i = 0; i < data.length; i++) {
+            if (i < windowSize - 1) {
+                sma.push(null); // Not enough data points yet
+            } else {
+                let sum = 0;
+                for (let j = 0; j < windowSize; j++) {
+                    sum += data[i - j];
+                }
+                sma.push(sum / windowSize);
+            }
+        }
+        return sma;
+    }
+
+    /**
      * Filters data based on days and updates charts
      */
     function updateRange(days, btnElement) {
-        // Update button UI
         if (btnElement) {
             document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
@@ -141,26 +160,40 @@
 
         let filteredData = rawData;
         if (days > 0) {
-            filteredData = rawData.slice(-days);
+            // We take a bit more data for the SMA calculation if available, 
+            // then slice to the requested range for display.
+            const buffer = 7; 
+            const startIdx = Math.max(0, rawData.length - (days + buffer));
+            filteredData = rawData.slice(startIdx);
         }
 
-        const labels = filteredData.map(row => row.date);
-        const y2 = filteredData.map(row => row.yield_2y);
-        const y5 = filteredData.map(row => row.yield_5y);
-        const spread = filteredData.map(row => row.spread); // Removed the * -1 (no longer inverted)
+        const fullLabels = filteredData.map(row => row.date);
+        const fullY2 = filteredData.map(row => row.yield_2y);
+        const fullY5 = filteredData.map(row => row.yield_5y);
+        const fullSpread = filteredData.map(row => row.spread);
+        
+        // Calculate SMA on the segment we have
+        const fullSMA = calculateSMA(fullSpread, 7);
 
-        renderCharts(labels, y2, y5, spread);
+        // Slice to actual requested display range
+        const displayOffset = days > 0 ? Math.max(0, filteredData.length - days) : 0;
+        
+        const labels = fullLabels.slice(displayOffset);
+        const y2 = fullY2.slice(displayOffset);
+        const y5 = fullY5.slice(displayOffset);
+        const spread = fullSpread.slice(displayOffset);
+        const sma7 = fullSMA.slice(displayOffset);
+
+        renderCharts(labels, y2, y5, spread, sma7);
     }
 
-    function renderCharts(labels, y2, y5, spread) {
+    function renderCharts(labels, y2, y5, spread, sma7) {
         const yieldCtx = document.getElementById('yieldChart').getContext('2d');
         const spreadCtx = document.getElementById('spreadChart').getContext('2d');
 
-        // Destroy existing charts to prevent overlap
         if (yieldChart) yieldChart.destroy();
         if (spreadChart) spreadChart.destroy();
 
-        // Yield Comparison Chart
         yieldChart = new Chart(yieldCtx, {
             type: 'line',
             data: {
@@ -200,35 +233,48 @@
             }
         });
 
-        // Spread Chart
         spreadChart = new Chart(spreadCtx, {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'CAN 5Y - 2Y Spread',
-                    data: spread,
-                    borderColor: '#ffbd2e',
-                    backgroundColor: 'rgba(255, 189, 46, 0.1)',
-                    fill: true,
-                    borderWidth: 2,
-                    tension: 0.3,
-                    pointRadius: 0
-                }]
+                datasets: [
+                    {
+                        label: 'CAN 5Y - 2Y Spread',
+                        data: spread,
+                        borderColor: '#ffbd2e',
+                        backgroundColor: 'rgba(255, 189, 46, 0.1)',
+                        fill: true,
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        order: 2
+                    },
+                    {
+                        label: '7-Day Moving Average',
+                        data: sma7,
+                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        order: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'CAN 5Y - 2Y Spread (Daily)', color: '#eaecef' }
+                    title: { display: true, text: 'CAN 5Y - 2Y Spread (Daily & 7D MA)', color: '#eaecef' }
                 },
                 scales: {
                     y: { 
                         title: { display: true, text: 'Spread (%)' },
                         grid: {
                             color: function(context) {
-                                if (context.tick.value === 0) return '#ff4d4d'; // Highlight the inversion line (0%)
+                                if (context.tick.value === 0) return '#ff4d4d';
                                 return '#2b3139';
                             }
                         }
