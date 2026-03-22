@@ -89,7 +89,7 @@
 <header>
     <div class="header-content">
         <h1>Canadian Government Bond Yield Analysis</h1>
-        <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of 2026-03-22 02:01:52</p>
+        <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of <span id="last-updated">...</span></p>
     </div>
     <div class="controls">
         <button class="btn active" onclick="updateRange(30, this)">30D</button>
@@ -125,6 +125,13 @@
         dynamicTyping: true,
         complete: function(results) {
             rawData = results.data.filter(row => row.date);
+            
+            // Set the "last updated" date from the final entry in the CSV
+            if (rawData.length > 0) {
+                const lastEntry = rawData[rawData.length - 1];
+                document.getElementById('last-updated').textContent = lastEntry.date;
+            }
+
             // Default to 30 days
             updateRange(30);
         }
