@@ -1,17 +1,17 @@
 graph TD
-    subgraph GitHub_Action ["GitHub Action Environment"]
-        A["Workflow Trigger (Issue/PR)"] --> B{"Authentication Method?"}
-        B -- "Secret: GEMINI_API_KEY" --> C["Google AI Studio (Gemini API)"]
-        B -- "Variables: GCP_WIF_PROVIDER + PROJECT_ID" --> D["Vertex AI (Vertex AI API)"]
+    subgraph Public_View ["Publicly Visible (GitHub)"]
+        A["Code / GEMINI.md / YAML"]
     end
 
-    subgraph Service_Providers ["Service Providers"]
-        C --> E["Gemini Pro Model Response"]
-        D --> E
+    subgraph Github_Vault ["Encrypted Secret Vault (Private)"]
+        B["GEMINI_API_KEY"]
     end
 
-    subgraph Project_Outputs ["Project Outputs"]
-        E --> F["Apply Labels (Triage)"]
-        E --> G["Comment on PR (Review)"]
-        E --> H["Perform Task (Invoke)"]
+    subgraph Action_Runner ["GitHub Action Runner (Secure)"]
+        C["Workflow Execution"]
+        B -- "Injected as Env Var" --> C
     end
+
+    C --> D["Gemini API"]
+    D --> E["Triage / Review Results"]
+    E --> Public_View
