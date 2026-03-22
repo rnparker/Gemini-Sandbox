@@ -1,7 +1,8 @@
 name: 'List Gemini Models'
 
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
 
 jobs:
   list-models:
