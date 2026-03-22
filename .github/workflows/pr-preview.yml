@@ -15,7 +15,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
         with:
-          # Fetch all history so we can push back to the branch
           fetch-depth: 0
 
       - name: Set up Python
@@ -40,13 +39,27 @@ jobs:
           SPREAD_CSV_PATH: "docs/previews/pr-${{ github.event.number }}/historical_spread.csv"
         run: python pulse_check.py
 
-      - name: Commit and Push Preview
+      - name: Commit and Push Preview to Main
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
+          
+          # We need the preview files on the 'main' branch for GitHub Pages to serve them from /docs
+          # 1. Stash the generated preview files
           git add "docs/previews/pr-${{ github.event.number }}/"
-          git commit -m "docs: add preview for PR #${{ github.event.number }} [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:${{ github.head_ref }}
+          git stash
+          
+          # 2. Switch to main branch
+          git checkout main
+          git pull origin main
+          
+          # 3. Apply stash (bring the preview files to main)
+          git stash pop
+          
+          # 4. Commit and push to main
+          git add "docs/previews/pr-${{ github.event.number }}/"
+          git commit -m "docs: deploy preview for PR #${{ github.event.number }} [skip ci]" || echo "No changes to commit"
+          git push origin main
 
       - name: Post Preview URL
         uses: marocchino/sticky-pull-request-comment@v2
@@ -57,4 +70,3 @@ jobs:
             [https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/index.html](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/index.html)
             
             *Note: It may take a minute for GitHub Pages to deploy the new files.*
-
