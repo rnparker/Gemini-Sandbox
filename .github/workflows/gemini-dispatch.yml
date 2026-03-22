@@ -93,14 +93,13 @@ jobs:
             const request = process.env.REQUEST;
             core.setOutput('request', request);
 
+            // Review command is disabled to avoid Pro model quota issues on Free Tier
             if (eventType === 'pull_request.opened') {
-              core.setOutput('command', 'review');
+              core.setOutput('command', 'fallthrough');
             } else if (['issues.opened', 'issues.reopened'].includes(eventType)) {
               core.setOutput('command', 'triage');
             } else if (request.startsWith("@gemini-cli /review")) {
-              core.setOutput('command', 'review');
-              const additionalContext = request.replace(/^@gemini-cli \/review/, '').trim();
-              core.setOutput('additional_context', additionalContext);
+              core.setOutput('command', 'fallthrough');
             } else if (request.startsWith("@gemini-cli /triage")) {
               core.setOutput('command', 'triage');
             } else if (request.startsWith("@gemini-cli /approve")) {
@@ -114,6 +113,8 @@ jobs:
             }
 
       - name: 'Acknowledge request'
+        if: |-
+          steps.extract_command.outputs.command != 'fallthrough'
         env:
           GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
           ISSUE_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
@@ -127,8 +128,8 @@ jobs:
 
   review:
     needs: 'dispatch'
-    if: |-
-      ${{ needs.dispatch.outputs.command == 'review' }}
+    # Disabled: uses Pro model with zero quota on Free Tier
+    if: false
     uses: './.github/workflows/gemini-review.yml'
     permissions:
       contents: 'read'
@@ -209,6 +210,8 @@ jobs:
           permission-pull-requests: 'write'
 
       - name: 'Send failure comment'
+        if: |-
+          needs.dispatch.outputs.command != 'fallthrough'
         env:
           GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
           ISSUE_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
