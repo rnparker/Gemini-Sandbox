@@ -1,11 +1,15 @@
-name: Weekly Market Pulse
+name: Daily Market Pulse & Update
 on:
   schedule:
-    - cron: '0 16 * * 5' # Runs at 4 PM every Friday
-  workflow_dispatch: # This allows us to "force" a run manually
+    # Runs at 16:00 UTC every weekday (Monday-Friday)
+    - cron: '0 16 * * 1-5'
+  workflow_dispatch: # Allows manual triggers
+
+permissions:
+  contents: write # Needed to push the updated CSV back to the repository
 
 jobs:
-  build:
+  update-data:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -19,5 +23,16 @@ jobs:
       - name: Install Dependencies
         run: pip install requests
 
-      - name: Run Pulse Check
-        run: python pulse_check.py
+      - name: Run Spread Scraper
+        # This script now reads the CSV, fetches recent BoC data, 
+        # and appends only new, unique entries.
+        run: python pulse_check.py 
+
+      - name: Commit and Push Data
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add historical_spread.csv
+          # Only commit if there are actual changes to the file
+          git commit -m "data: update historical spread [skip ci]" || echo "No changes to commit"
+          git push

@@ -1,0 +1,18 @@
+graph TD
+    A[GitHub Actions Trigger] --> B(Pulse Check Python Script)
+    B --> C[Read All Existing CSV Data]
+    C --> D[Fetch Latest BoC API Data]
+    D --> E{Extract New Observations}
+    E --> F[Merge Existing & New Data]
+    F --> G[Sort All Data by Date - Ascending]
+    G --> H[Rewrite CSV File]
+    H --> I[Commit & Push Changes]
+    
+    subgraph Logic Improvements
+    G
+    H
+    end
+    
+    subgraph Storage
+    H
+    end

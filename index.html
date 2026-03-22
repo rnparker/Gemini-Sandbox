@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yield Tracker | FinTech Dashboard</title>
+    <!-- Use CDN for PapaParse (CSV Parsing) and Chart.js (Data Visualization) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Dark FinTech Theme */
+        :root {
+            --bg-dark: #0b0e11;
+            --card-bg: #1e2329;
+            --text-primary: #eaecef;
+            --text-secondary: #848e9c;
+            --accent-2y: #00ffcc; /* Neon Green */
+            --accent-5y: #00ccff; /* Neon Blue */
+            --accent-spread: #ff4d4d; /* Red for inverted spread */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        h1 { margin: 0; font-weight: 600; font-size: 1.5rem; }
+        p { color: var(--text-secondary); margin-top: 5px; }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            height: 400px; /* Fixed height for consistent look */
+        }
+
+        canvas { width: 100% !important; height: 100% !important; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CAN Government Yield Analysis</h1>
+    <p>Historical spread and yield curves for 2Y vs 5Y</p>
+</header>
+
+<div class="container">
+    <div class="chart-card">
+        <canvas id="yieldChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <canvas id="spreadChart"></canvas>
+    </div>
+</div>
+
+<script>
+    // Global configuration for Chart.js to maintain a dark theme
+    Chart.defaults.color = '#848e9c';
+    Chart.defaults.borderColor = '#2b3139';
+
+    /**
+     * Data Initialization
+     * Using PapaParse to fetch and parse the CSV from the local directory
+     */
+    Papa.parse('historical_spread.csv', {
+        download: true,
+        header: true,
+        dynamicTyping: true,
+        complete: function(results) {
+            const data = results.data.filter(row => row.date); // Filter out empty rows
+
+            // Transform data for charts
+            const labels = data.map(row => row.date);
+            const y2 = data.map(row => row.yield_2y);
+            const y5 = data.map(row => row.yield_5y);
+            const spread = data.map(row => row.spread * -1); // Inverting the spread as requested
+
+            renderYieldChart(labels, y2, y5);
+            renderSpreadChart(labels, spread);
+        }
+    });
+
+    /**
+     * Chart 1: Yield Comparison (2Y vs 5Y)
+     */
+    function renderYieldChart(labels, y2, y5) {
+        new Chart(document.getElementById('yieldChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'CAN 2Y Yield',
+                        data: y2,
+                        borderColor: '#00ffcc',
+                        backgroundColor: 'rgba(0, 255, 204, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'CAN 5Y Yield',
+                        data: y5,
+                        borderColor: '#00ccff',
+                        backgroundColor: 'rgba(0, 204, 255, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'CAN Yield Comparison (2Y vs 5Y)', color: '#eaecef' }
+                },
+                scales: {
+                    y: { title: { display: true, text: 'Yield (%)' } }
+                }
+            }
+        });
+    }
+
+    /**
+     * Chart 2: Inverted CAN 2-5 Spread
+     */
+    function renderSpreadChart(labels, spreadData) {
+        new Chart(document.getElementById('spreadChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Inverted CAN 2-5 Spread',
+                    data: spreadData,
+                    borderColor: '#ff4d4d',
+                    backgroundColor: 'rgba(255, 77, 77, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Inverted CAN 2-5 Spread', color: '#ff4d4d' }
+                },
+                scales: {
+                    y: { title: { display: true, text: 'Spread (Inverted)' } }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
