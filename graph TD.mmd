@@ -1,7 +1,6 @@
 graph TD
-    A[Gemini CLI] -- "Generates" --> B[back_data.py]
-    B -- "Requests 12mo Data" --> C[Bank of Canada API]
-    C -- "JSON Payload" --> B
-    B -- "Calculates Spread" --> D{Logic Engine}
-    D -- "Writes" --> E[historical_spread.csv]
-    E -- "Input for" --> F[Future Analysis / Actions]
+    A[Bank of Canada API] -- "Valet Payload" --> B[GitHub Action / Python]
+    B -- "Calculates Spread" --> C[(historical_spread.csv)]
+    C -- "Data Source" --> D{Visualization Engine}
+    D -- "Chart.js / Plotly" --> E[Interactive Web Page]
+    E -- "Analysis" --> F[Visual Trend: Narrowing vs. Widening]
