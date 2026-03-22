@@ -21,6 +21,7 @@ def get_best_5y_fixed():
     Ref: @MORTGAGE_SPEC.md
     """
     try:
+        print("📡 Fetching latest Ratehub mortgage rates...")
         response = requests.get(RATEHUB_URL, timeout=15)
         response.raise_for_status()
         data = response.json()
@@ -77,7 +78,7 @@ def update_dashboard_data():
     """
     Fetches BoC and Ratehub data, calculates spread and margin, and updates CSV.
     """
-    # 1. Fetch Latest BoC Bond Yields
+    # 1. Fetch Latest BoC Bond Yields to determine the most recent observation date
     boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}/json?recent=10"
     
     try:
@@ -92,13 +93,23 @@ def update_dashboard_data():
             print("No BoC observations found.")
             return
 
-        # Fetch latest mortgage rate
-        print("📡 Fetching latest Ratehub mortgage rates...")
-        best_mortgage = get_best_5y_fixed()
-
-        # 2. Load existing data
+        # 2. Check if we already have complete data for the latest observation date
+        # This acts as a rate-limiting mechanism for the Ratehub API.
+        latest_date = observations[-1]['d']
         all_rows = get_all_rows(CSV_FILE)
         existing_data = {row['date']: row for row in all_rows}
+        
+        best_mortgage = None
+        latest_row = existing_data.get(latest_date)
+        
+        # If the latest date exists and already has mortgage data, skip Ratehub API call
+        if latest_row and latest_row.get('mortgage_5y') is not None:
+            print(f"✨ Data for {latest_date} is already complete in CSV. Skipping Ratehub API call.")
+            best_mortgage = latest_row['mortgage_5y']
+        else:
+            # Fetch latest mortgage rate only if needed
+            best_mortgage = get_best_5y_fixed()
+
         new_data_found = False
 
         # 3. Process observations
@@ -118,7 +129,6 @@ def update_dashboard_data():
                     continue
 
                 # Calculate Lending Margin if we have a mortgage rate
-                # Per GEMINI.md: Lending Margin = Best 5Y Fixed Rate - CAN 5Y Bond Yield
                 margin = None
                 if best_mortgage is not None:
                     margin = round(best_mortgage - y5, 4)
@@ -133,8 +143,10 @@ def update_dashboard_data():
                 }
 
                 if date in existing_data:
-                    # Update existing record with latest calculations
-                    existing_data[date].update({k: v for k, v in row_data.items() if v is not None})
+                    # Only update if current data is incomplete or changed
+                    current = existing_data[date]
+                    if current.get('mortgage_5y') is None or current.get('yield_5y') != y5:
+                        existing_data[date].update({k: v for k, v in row_data.items() if v is not None})
                 else:
                     existing_data[date] = row_data
                     new_data_found = True
