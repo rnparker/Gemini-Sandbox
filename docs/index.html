@@ -16,7 +16,8 @@
             --text-secondary: #848e9c;
             --accent-2y: #00ffcc; /* Neon Green */
             --accent-5y: #00ccff; /* Neon Blue */
-            --accent-spread: #ff4d4d; /* Red for inverted spread */
+            --accent-spread: #ffbd2e; /* Golden Yellow for Spread */
+            --button-active: #f0b90b;
         }
 
         body {
@@ -33,12 +34,35 @@
         header {
             width: 100%;
             max-width: 1200px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }
 
-        h1 { margin: 0; font-weight: 600; font-size: 1.5rem; }
-        p { color: var(--text-secondary); margin-top: 5px; }
+        .header-content h1 { margin: 0; font-weight: 600; font-size: 1.5rem; }
+        .header-content p { color: var(--text-secondary); margin-top: 5px; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background-color: var(--card-bg);
+            border: 1px solid #474d57;
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { border-color: var(--button-active); }
+        .btn.active { background-color: var(--button-active); color: black; border-color: var(--button-active); }
 
         .container {
             display: flex;
@@ -53,7 +77,7 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            height: 400px; /* Fixed height for consistent look */
+            height: 400px;
         }
 
         canvas { width: 100% !important; height: 100% !important; }
@@ -62,8 +86,16 @@
 <body>
 
 <header>
-    <h1>CAN Government Yield Analysis</h1>
-    <p>Historical spread and yield curves for 2Y vs 5Y</p>
+    <div class="header-content">
+        <h1>CAN Government Yield Analysis</h1>
+        <p>2Y vs 5Y Benchmark Bonds & Historical Spread</p>
+    </div>
+    <div class="controls">
+        <button class="btn active" onclick="updateRange(30, this)">30D</button>
+        <button class="btn" onclick="updateRange(90, this)">90D</button>
+        <button class="btn" onclick="updateRange(365, this)">1Y</button>
+        <button class="btn" onclick="updateRange(0, this)">MAX</button>
+    </div>
 </header>
 
 <div class="container">
@@ -76,37 +108,60 @@
 </div>
 
 <script>
-    // Global configuration for Chart.js to maintain a dark theme
+    let rawData = [];
+    let yieldChart, spreadChart;
+
+    // Global configuration for Chart.js
     Chart.defaults.color = '#848e9c';
     Chart.defaults.borderColor = '#2b3139';
 
     /**
-     * Data Initialization
-     * Using PapaParse to fetch and parse the CSV from the local directory
+     * Initial Data Load
      */
     Papa.parse('historical_spread.csv', {
         download: true,
         header: true,
         dynamicTyping: true,
         complete: function(results) {
-            const data = results.data.filter(row => row.date); // Filter out empty rows
-
-            // Transform data for charts
-            const labels = data.map(row => row.date);
-            const y2 = data.map(row => row.yield_2y);
-            const y5 = data.map(row => row.yield_5y);
-            const spread = data.map(row => row.spread * -1); // Inverting the spread as requested
-
-            renderYieldChart(labels, y2, y5);
-            renderSpreadChart(labels, spread);
+            rawData = results.data.filter(row => row.date);
+            // Default to 30 days
+            updateRange(30);
         }
     });
 
     /**
-     * Chart 1: Yield Comparison (2Y vs 5Y)
+     * Filters data based on days and updates charts
      */
-    function renderYieldChart(labels, y2, y5) {
-        new Chart(document.getElementById('yieldChart'), {
+    function updateRange(days, btnElement) {
+        // Update button UI
+        if (btnElement) {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+
+        let filteredData = rawData;
+        if (days > 0) {
+            filteredData = rawData.slice(-days);
+        }
+
+        const labels = filteredData.map(row => row.date);
+        const y2 = filteredData.map(row => row.yield_2y);
+        const y5 = filteredData.map(row => row.yield_5y);
+        const spread = filteredData.map(row => row.spread); // Removed the * -1 (no longer inverted)
+
+        renderCharts(labels, y2, y5, spread);
+    }
+
+    function renderCharts(labels, y2, y5, spread) {
+        const yieldCtx = document.getElementById('yieldChart').getContext('2d');
+        const spreadCtx = document.getElementById('spreadChart').getContext('2d');
+
+        // Destroy existing charts to prevent overlap
+        if (yieldChart) yieldChart.destroy();
+        if (spreadChart) spreadChart.destroy();
+
+        // Yield Comparison Chart
+        yieldChart = new Chart(yieldCtx, {
             type: 'line',
             data: {
                 labels: labels,
@@ -116,7 +171,7 @@
                         data: y2,
                         borderColor: '#00ffcc',
                         backgroundColor: 'rgba(0, 255, 204, 0.1)',
-                        fill: false,
+                        borderWidth: 2,
                         tension: 0.1,
                         pointRadius: 0
                     },
@@ -125,7 +180,7 @@
                         data: y5,
                         borderColor: '#00ccff',
                         backgroundColor: 'rgba(0, 204, 255, 0.1)',
-                        fill: false,
+                        borderWidth: 2,
                         tension: 0.1,
                         pointRadius: 0
                     }
@@ -134,30 +189,29 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'CAN Yield Comparison (2Y vs 5Y)', color: '#eaecef' }
+                    title: { display: true, text: 'CAN Yield Comparison (2Y vs 5Y)', color: '#eaecef' },
+                    legend: { position: 'top' }
                 },
                 scales: {
                     y: { title: { display: true, text: 'Yield (%)' } }
                 }
             }
         });
-    }
 
-    /**
-     * Chart 2: Inverted CAN 2-5 Spread
-     */
-    function renderSpreadChart(labels, spreadData) {
-        new Chart(document.getElementById('spreadChart'), {
+        // Spread Chart
+        spreadChart = new Chart(spreadCtx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Inverted CAN 2-5 Spread',
-                    data: spreadData,
-                    borderColor: '#ff4d4d',
-                    backgroundColor: 'rgba(255, 77, 77, 0.1)',
+                    label: 'CAN 5Y - 2Y Spread',
+                    data: spread,
+                    borderColor: '#ffbd2e',
+                    backgroundColor: 'rgba(255, 189, 46, 0.1)',
                     fill: true,
+                    borderWidth: 2,
                     tension: 0.3,
                     pointRadius: 0
                 }]
@@ -165,11 +219,20 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'Inverted CAN 2-5 Spread', color: '#ff4d4d' }
+                    title: { display: true, text: 'CAN 5Y - 2Y Spread (Daily)', color: '#eaecef' }
                 },
                 scales: {
-                    y: { title: { display: true, text: 'Spread (Inverted)' } }
+                    y: { 
+                        title: { display: true, text: 'Spread (%)' },
+                        grid: {
+                            color: function(context) {
+                                if (context.tick.value === 0) return '#ff4d4d'; // Highlight the inversion line (0%)
+                                return '#2b3139';
+                            }
+                        }
+                    }
                 }
             }
         });
