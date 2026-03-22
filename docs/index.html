@@ -17,6 +17,8 @@
             --accent-2y: #00ffcc; /* Neon Green */
             --accent-5y: #00ccff; /* Neon Blue */
             --accent-spread: #ffbd2e; /* Golden Yellow for Spread */
+            --accent-margin: #32cd32; /* Lime Green for Lending Margin */
+            --accent-mortgage: #ff4500; /* OrangeRed for Mortgage */
             --accent-ma: #ffffff;    /* White for Moving Average */
             --button-active: #f0b90b;
         }
@@ -81,7 +83,30 @@
             height: 400px;
         }
 
+        .disclaimer {
+            width: 100%;
+            max-width: 1200px;
+            box-sizing: border-box;
+            color: #ffbd2e;
+            font-size: 0.85rem;
+            padding: 12px 15px;
+            border-left: 4px solid #ff4500;
+            background: rgba(30, 35, 41, 0.8);
+            border-radius: 4px;
+            margin-bottom: -15px;
+        }
+
         canvas { width: 100% !important; height: 100% !important; }
+        
+        footer {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 40px;
+            padding-bottom: 20px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -92,11 +117,11 @@
         <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of <span id="last-updated">...</span></p>
     </div>
     <div class="controls">
-        <button class="btn active" onclick="updateRange(7, this)">7D</button>
-        <button class="btn" onclick="updateRange(30, this)">30D</button>
-        <button class="btn" onclick="updateRange(90, this)">90D</button>
-        <button class="btn" onclick="updateRange(365, this)">1Y</button>
-        <button class="btn" onclick="updateRange(0, this)">MAX</button>
+        <button id="btn7d" class="btn active" onclick="updateRange(7, this)">7D</button>
+        <button id="btn30d" class="btn" onclick="updateRange(30, this)">30D</button>
+        <button id="btn90d" class="btn" onclick="updateRange(90, this)">90D</button>
+        <button id="btn1y" class="btn" onclick="updateRange(365, this)">1Y</button>
+        <button id="btnmax" class="btn" onclick="updateRange(0, this)">MAX</button>
     </div>
 </header>
 
@@ -107,11 +132,24 @@
     <div class="chart-card">
         <canvas id="spreadChart"></canvas>
     </div>
+
+    <!-- Data Disclaimer -->
+    <div class="disclaimer">
+        <strong>⚠️ Market Data Notice:</strong> Mortgage rates are estimated based on representative insured products. Daily fluctuations, data provider delays, or automated collection anomalies may result in temporary inaccuracies. This dashboard is for informational purposes only.
+    </div>
+
+    <div class="chart-card">
+        <canvas id="marginChart"></canvas>
+    </div>
 </div>
+
+<footer>
+    <p>Data Source: Bank of Canada & Ratehub | Last Updated: <span id="last-updated-footer">...</span> (MT)</p>
+</footer>
 
 <script>
     let rawData = [];
-    let yieldChart, spreadChart;
+    let yieldChart, spreadChart, marginChart;
 
     // Global configuration for Chart.js
     Chart.defaults.color = '#848e9c';
@@ -131,6 +169,7 @@
             if (rawData.length > 0) {
                 const lastEntry = rawData[rawData.length - 1];
                 document.getElementById('last-updated').textContent = lastEntry.date;
+                document.getElementById('last-updated-footer').textContent = lastEntry.date;
             }
 
             // Default to 7 days
@@ -144,14 +183,19 @@
     function calculateSMA(data, windowSize) {
         let sma = [];
         for (let i = 0; i < data.length; i++) {
-            if (i < windowSize - 1) {
+            const val = data[i];
+            if (i < windowSize - 1 || val === null) {
                 sma.push(null); // Not enough data points yet
             } else {
                 let sum = 0;
+                let validCount = 0;
                 for (let j = 0; j < windowSize; j++) {
-                    sum += data[i - j];
+                    if (data[i - j] !== null) {
+                        sum += data[i - j];
+                        validCount++;
+                    }
                 }
-                sma.push(sum / windowSize);
+                sma.push(validCount === windowSize ? sum / windowSize : null);
             }
         }
         return sma;
@@ -179,6 +223,8 @@
         const fullY2 = filteredData.map(row => row.yield_2y);
         const fullY5 = filteredData.map(row => row.yield_5y);
         const fullSpread = filteredData.map(row => row.spread);
+        const fullMortgage = filteredData.map(row => row.mortgage_5y);
+        const fullMargin = filteredData.map(row => row.lending_margin);
         
         // Calculate SMA on the segment we have
         const fullSMA = calculateSMA(fullSpread, 7);
@@ -191,16 +237,20 @@
         const y5 = fullY5.slice(displayOffset);
         const spread = fullSpread.slice(displayOffset);
         const sma7 = fullSMA.slice(displayOffset);
+        const mortgage = fullMortgage.slice(displayOffset);
+        const margin = fullMargin.slice(displayOffset);
 
-        renderCharts(labels, y2, y5, spread, sma7);
+        renderCharts(labels, y2, y5, spread, sma7, mortgage, margin);
     }
 
-    function renderCharts(labels, y2, y5, spread, sma7) {
+    function renderCharts(labels, y2, y5, spread, sma7, mortgage, margin) {
         const yieldCtx = document.getElementById('yieldChart').getContext('2d');
         const spreadCtx = document.getElementById('spreadChart').getContext('2d');
+        const marginCtx = document.getElementById('marginChart').getContext('2d');
 
         if (yieldChart) yieldChart.destroy();
         if (spreadChart) spreadChart.destroy();
+        if (marginChart) marginChart.destroy();
 
         yieldChart = new Chart(yieldCtx, {
             type: 'line',
@@ -287,6 +337,57 @@
                             }
                         }
                     }
+                }
+            }
+        });
+
+        marginChart = new Chart(marginCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Lending Margin',
+                        data: margin,
+                        borderColor: '#32cd32',
+                        backgroundColor: 'rgba(50, 205, 50, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.2,
+                        pointRadius: 0,
+                        order: 1
+                    },
+                    {
+                        label: 'Best 5Y Fixed Rate',
+                        data: mortgage,
+                        borderColor: '#ff4500',
+                        borderWidth: 1.5,
+                        borderDash: [3, 3],
+                        tension: 0.1,
+                        pointRadius: 0,
+                        order: 2
+                    },
+                    {
+                        label: 'CAN 5Y Bond Yield',
+                        data: y5,
+                        borderColor: '#00ccff',
+                        borderWidth: 1.5,
+                        borderDash: [2, 2],
+                        tension: 0.1,
+                        pointRadius: 0,
+                        order: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    title: { display: true, text: 'Lending Margin Analysis (Mortgage vs Bond)', color: '#eaecef' },
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { title: { display: true, text: 'Rate / Margin (%)' } }
                 }
             }
         });
