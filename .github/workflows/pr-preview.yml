@@ -2,7 +2,7 @@ name: PR Preview
 on:
   pull_request:
     branches: [ main ]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
 permissions:
   contents: write
@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   generate-preview:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -70,3 +71,32 @@ jobs:
             [https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/index.html](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/index.html)
             
             *Note: It may take a minute for GitHub Pages to deploy the new files.*
+
+  cleanup-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Remove Preview Directory
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          PREVIEW_DIR="docs/previews/pr-${{ github.event.number }}"
+          if [ -d "$PREVIEW_DIR" ]; then
+            git rm -rf "$PREVIEW_DIR"
+            git commit -m "docs: cleanup preview for PR #${{ github.event.number }} [skip ci]"
+            git push origin main
+          else
+            echo "No preview directory found for PR #${{ github.event.number }}"
+          fi
+
+      - name: Delete Preview URL Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          delete: true

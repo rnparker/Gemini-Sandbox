@@ -1,27 +1,26 @@
 graph TD
     subgraph "PR Event Trigger"
-        A["Pull Request Opened/Updated"] --> B("GitHub Action: PR Preview")
+        A["Pull Request Event"] --> B{"Action Type?"}
+        B -- "opened / synchronize / reopened" --> C("Job: generate-preview")
+        B -- "closed" --> D("Job: cleanup-preview")
     end
 
-    subgraph "Workspace Setup"
-        B --> C["Checkout PR Branch"]
-        C --> D["Create Directory: docs/previews/pr-{{num}}"]
-        D --> E["Seed Preview: Copy index.html & CSV"]
+    subgraph "Generation Logic"
+        C --> C1["Checkout PR Branch"]
+        C1 --> C2["Create docs/previews/pr-{{num}}"]
+        C2 --> C3["Run pulse_check.py"]
+        C3 --> C4["Switch to 'main' & Push Preview"]
+        C4 --> C5["Post/Update Sticky PR Comment"]
     end
 
-    subgraph "Data Generation"
-        E --> F["Run pulse_check.py"]
-        F -- "SPREAD_CSV_PATH set to preview folder" --> G["Update Preview CSV"]
+    subgraph "Cleanup Logic"
+        D --> D1["Checkout 'main' Branch"]
+        D1 --> D2["git rm -rf docs/previews/pr-{{num}}"]
+        D2 --> D3["Commit & Push to 'main'"]
+        D3 --> D4["Delete Sticky PR Comment"]
     end
 
-    subgraph "Deployment & Feedback"
-        G --> H["Switch to 'main' branch & Apply Changes"]
-        H --> I["Commit & Push Preview Files to 'main'"]
-        I --> J["Sticky PR Comment with URL"]
-        J --> K["User Reviews Preview Link"]
-    end
-
-    subgraph "Pages Hosting"
-        I -.-> L["GitHub Pages (main branch /docs)"]
-        L -.-> K
+    subgraph "Hosting"
+        C4 -.-> E["GitHub Pages (main branch /docs)"]
+        D3 -.-> E
     end
