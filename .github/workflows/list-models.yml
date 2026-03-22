@@ -1,0 +1,14 @@
+name: 'List Gemini Models'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list-models:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'List Gemini Models'
+        uses: 'google-github-actions/run-gemini-cli@v0'
+        with:
+          gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
+          prompt: 'List all available models using the ListModels API call and print them.'
