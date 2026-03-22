@@ -1,0 +1,72 @@
+name: PR Preview
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Create Preview Directory
+        run: |
+          PREVIEW_DIR="docs/previews/pr-${{ github.event.number }}"
+          mkdir -p "$PREVIEW_DIR"
+          # Copy existing index and data to seed the preview
+          cp docs/index.html "$PREVIEW_DIR/"
+          cp docs/historical_spread.csv "$PREVIEW_DIR/"
+          echo "PREVIEW_DIR=$PREVIEW_DIR" >> $GITHUB_ENV
+
+      - name: Run Spread Scraper for Preview
+        env:
+          SPREAD_CSV_PATH: "docs/previews/pr-${{ github.event.number }}/historical_spread.csv"
+        run: python pulse_check.py
+
+      - name: Commit and Push Preview to Main
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          # Move preview files out of the repo temporarily so they don't get lost on checkout
+          mkdir -p ../preview_tmp/pr-${{ github.event.number }}
+          cp -r "docs/previews/pr-${{ github.event.number }}/." ../preview_tmp/pr-${{ github.event.number }}/
+          
+          # Switch to main branch
+          git checkout main
+          git pull origin main
+          
+          # Restore preview files
+          mkdir -p "docs/previews/pr-${{ github.event.number }}/"
+          cp -r ../preview_tmp/pr-${{ github.event.number }}/. "docs/previews/pr-${{ github.event.number }}/"
+          
+          # Commit and push to main
+          git add "docs/previews/pr-${{ github.event.number }}/"
+          git commit -m "docs: deploy preview for PR #${{ github.event.number }} [skip ci]" || echo "No changes to commit"
+          git push origin main
+
+      - name: Post Preview URL
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            ### 🚀 PR Preview Ready!
+            You can view the changes for this PR at:
+            [https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/index.html](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/index.html)
+            
+            *Note: It may take a minute for GitHub Pages to deploy the new files.*

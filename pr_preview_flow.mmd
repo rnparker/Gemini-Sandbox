@@ -1,0 +1,27 @@
+graph TD
+    subgraph "PR Event Trigger"
+        A["Pull Request Opened/Updated"] --> B("GitHub Action: PR Preview")
+    end
+
+    subgraph "Workspace Setup"
+        B --> C["Checkout PR Branch"]
+        C --> D["Create Directory: docs/previews/pr-{{num}}"]
+        D --> E["Seed Preview: Copy index.html & CSV"]
+    end
+
+    subgraph "Data Generation"
+        E --> F["Run pulse_check.py"]
+        F -- "SPREAD_CSV_PATH set to preview folder" --> G["Update Preview CSV"]
+    end
+
+    subgraph "Deployment & Feedback"
+        G --> H["Switch to 'main' branch & Apply Changes"]
+        H --> I["Commit & Push Preview Files to 'main'"]
+        I --> J["Sticky PR Comment with URL"]
+        J --> K["User Reviews Preview Link"]
+    end
+
+    subgraph "Pages Hosting"
+        I -.-> L["GitHub Pages (main branch /docs)"]
+        L -.-> K
+    end

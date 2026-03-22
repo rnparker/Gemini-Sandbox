@@ -7,7 +7,9 @@ import os
 # BD.CDN.5YR.DQ.YLD = 5-Year Benchmark Bond Yield
 SERIES_2Y = "BD.CDN.2YR.DQ.YLD"
 SERIES_5Y = "BD.CDN.5YR.DQ.YLD"
-CSV_FILE = "docs/historical_spread.csv"
+
+# Allow overriding the CSV file path via environment variable for PR previews
+CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
 
 def get_all_rows(filename):
     """
@@ -15,6 +17,8 @@ def get_all_rows(filename):
     """
     rows = []
     if not os.path.exists(filename):
+        # If the file doesn't exist (e.g., first time in a new preview folder), 
+        # return an empty list.
         return rows
     
     try:
@@ -84,12 +88,12 @@ def update_can_spread():
         
         if not new_data_found:
             print("✨ No new data to add.")
-            # We still sort and rewrite just to be absolutely sure the file is in order
-            # as requested by the user, even if no new data was found.
         
         # 3. Sort all rows by date (Ascending)
-        # Python's sort is stable, and date strings (YYYY-MM-DD) sort correctly.
         all_rows.sort(key=lambda x: x['date'])
+
+        # Ensure directory exists before writing
+        os.makedirs(os.path.dirname(CSV_FILE), exist_ok=True)
 
         # 4. Rewrite the CSV with sorted data
         with open(CSV_FILE, mode='w', newline='') as f:
