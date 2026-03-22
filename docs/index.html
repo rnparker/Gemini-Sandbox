@@ -92,7 +92,8 @@
         <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of <span id="last-updated">...</span></p>
     </div>
     <div class="controls">
-        <button class="btn active" onclick="updateRange(30, this)">30D</button>
+        <button class="btn active" onclick="updateRange(7, this)">7D</button>
+        <button class="btn" onclick="updateRange(30, this)">30D</button>
         <button class="btn" onclick="updateRange(90, this)">90D</button>
         <button class="btn" onclick="updateRange(365, this)">1Y</button>
         <button class="btn" onclick="updateRange(0, this)">MAX</button>
@@ -132,8 +133,8 @@
                 document.getElementById('last-updated').textContent = lastEntry.date;
             }
 
-            // Default to 30 days
-            updateRange(30);
+            // Default to 7 days
+            updateRange(7);
         }
     });
 
