@@ -3,6 +3,10 @@ on:
   pull_request:
     branches: [ main ]
     types: [opened, synchronize, reopened, closed]
+    paths:
+      - 'docs/index.html'
+      - 'pulse_check.py'
+      - '.github/workflows/pr-preview.yml'
 
 permissions:
   contents: write
