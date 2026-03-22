@@ -1,0 +1,17 @@
+graph TD
+    subgraph GitHub_Action ["GitHub Action Environment"]
+        A["Workflow Trigger (Issue/PR)"] --> B{"Authentication Method?"}
+        B -- "Secret: GEMINI_API_KEY" --> C["Google AI Studio (Gemini API)"]
+        B -- "Variables: GCP_WIF_PROVIDER + PROJECT_ID" --> D["Vertex AI (Vertex AI API)"]
+    end
+
+    subgraph Service_Providers ["Service Providers"]
+        C --> E["Gemini Pro Model Response"]
+        D --> E
+    end
+
+    subgraph Project_Outputs ["Project Outputs"]
+        E --> F["Apply Labels (Triage)"]
+        E --> G["Comment on PR (Review)"]
+        E --> H["Perform Task (Invoke)"]
+    end
