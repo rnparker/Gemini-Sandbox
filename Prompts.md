@@ -1,0 +1,1 @@
+gemini --all-files --prompt "Create a new Python script named 'back_data.py'. It should fetch the last 12 months of historical data for BD.CDN.2YR.DQ.YLD and BD.CDN.5YR.DQ.YLD from the Bank of Canada Valet API, calculate the daily 2-5 spread, and save the results to 'historical_spread.csv'. Include error handling as defined in my instructions."
