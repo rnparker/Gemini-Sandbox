@@ -88,8 +88,8 @@
 
 <header>
     <div class="header-content">
-        <h1>CAN Government Yield Analysis</h1>
-        <p>2Y vs 5Y Benchmark Bonds & Historical Spread</p>
+        <h1>Canadian Government Bond Yield Analysis</h1>
+        <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of <span id="last-updated">...</span></p>
     </div>
     <div class="controls">
         <button class="btn active" onclick="updateRange(30, this)">30D</button>
@@ -125,6 +125,13 @@
         dynamicTyping: true,
         complete: function(results) {
             rawData = results.data.filter(row => row.date);
+            
+            // Set the "last updated" date from the final entry in the CSV
+            if (rawData.length > 0) {
+                const lastEntry = rawData[rawData.length - 1];
+                document.getElementById('last-updated').textContent = lastEntry.date;
+            }
+
             // Default to 30 days
             updateRange(30);
         }
@@ -224,7 +231,7 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'CAN Yield Comparison (2Y vs 5Y)', color: '#eaecef' },
+                    title: { display: true, text: 'Canadian Yield Comparison (2Y vs 5Y)', color: '#eaecef' },
                     legend: { position: 'top' }
                 },
                 scales: {
@@ -239,7 +246,7 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: 'CAN 5Y - 2Y Spread',
+                        label: 'Canadian 5Y - 2Y Spread',
                         data: spread,
                         borderColor: '#ffbd2e',
                         backgroundColor: 'rgba(255, 189, 46, 0.1)',
@@ -267,7 +274,7 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'CAN 5Y - 2Y Spread (Daily & 7D MA)', color: '#eaecef' }
+                    title: { display: true, text: 'Canadian 5Y - 2Y Spread (Daily & 7D MA)', color: '#eaecef' }
                 },
                 scales: {
                     y: { 
