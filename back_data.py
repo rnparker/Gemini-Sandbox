@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # Bank of Canada Valet API Series IDs
 SERIES_2Y = "BD.CDN.2YR.DQ.YLD"
 SERIES_5Y = "BD.CDN.5YR.DQ.YLD"
-OUTPUT_FILE = "historical_spread.csv"
+OUTPUT_FILE = "docs/historical_spread.csv"
 
 def fetch_historical_data():
     """

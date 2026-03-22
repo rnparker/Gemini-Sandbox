@@ -7,7 +7,7 @@ import os
 # BD.CDN.5YR.DQ.YLD = 5-Year Benchmark Bond Yield
 SERIES_2Y = "BD.CDN.2YR.DQ.YLD"
 SERIES_5Y = "BD.CDN.5YR.DQ.YLD"
-CSV_FILE = "historical_spread.csv"
+CSV_FILE = "docs/historical_spread.csv"
 
 def get_all_rows(filename):
     """

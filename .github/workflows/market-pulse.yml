@@ -32,7 +32,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          git add historical_spread.csv
+          git add docs/historical_spread.csv
           # Only commit if there are actual changes to the file
           git commit -m "data: update historical spread [skip ci]" || echo "No changes to commit"
           git push
