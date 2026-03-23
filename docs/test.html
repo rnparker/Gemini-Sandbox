@@ -1,91 +1,264 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<style>
-  body { background: #1a1d21; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-  .dashboard { width: 800px; height: 500px; background: #2d3238; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #3f454f; }
-  .controls { margin-top: 20px; }
-  button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; background: #2ecc71; color: #1a1d21; transition: 0.3s; }
-  button:hover { background: #27ae60; transform: scale(1.05); }
-  
-  /* SVG Interactivity */
-  .branch { cursor: pointer; transition: 0.3s; }
-  .branch:hover { filter: brightness(1.2); }
-  .tunnel { stroke: #2ecc71; stroke-width: 4; transition: 0.5s; stroke-dasharray: 1000; stroke-dashoffset: 0; }
-  .tunnel.failed { stroke: #e74c3c; stroke-dasharray: 5; animation: dash 2s linear infinite; }
-  .reroute { stroke: #f1c40f; stroke-width: 4; opacity: 0; transition: 0.5s; stroke-dasharray: 5; animation: dash 5s linear infinite; }
-  .reroute.active { opacity: 1; }
+    <meta charset="UTF-8">
+    <title>KSCU | Appgate Cyber-Resilience Dashboard</title>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --neon-green: #00ff88;
+            --neon-blue: #00d9ff;
+            --neon-purple: #bc00ff;
+            --neon-red: #ff3c3c;
+            --neon-gold: #ffcc00;
+            --font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-  @keyframes dash { to { stroke-dashoffset: -100; } }
+        body {
+            background-color: var(--bg);
+            color: white;
+            font-family: var(--font);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-  .status-text { fill: #2ecc71; font-size: 14px; font-weight: bold; transition: 0.3s; }
-  .status-text.failed { fill: #e74c3c; }
-</style>
+        .header {
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .header p {
+            margin: 5px 0;
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        .dashboard-container {
+            position: relative;
+            width: 1000px;
+            height: 700px;
+            background: radial-gradient(circle at center, #161b22 0%, #0b0e14 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        /* SVG Styles */
+        svg { width: 100%; height: 100%; }
+
+        .link-base { stroke: rgba(255,255,255,0.05); stroke-width: 2; fill: none; }
+        
+        .sdp-tunnel {
+            fill: none;
+            stroke: var(--neon-green);
+            stroke-width: 3;
+            stroke-linecap: round;
+            filter: url(#glow);
+            opacity: 0.8;
+            transition: all 0.5s ease;
+        }
+
+        .sdp-tunnel.failed { stroke: var(--neon-red); filter: url(#red-glow); stroke-dasharray: 10; }
+
+        /* Data Pulse Animation */
+        .pulse {
+            fill: var(--neon-green);
+            filter: url(#glow);
+        }
+
+        .pulse-fast { animation: flow 3s linear infinite; }
+        .pulse-med { animation: flow 5s linear infinite; }
+
+        @keyframes flow {
+            from { offset-distance: 0%; }
+            to { offset-distance: 100%; }
+        }
+
+        /* Nodes / Glassmorphism */
+        .node-rect {
+            fill: var(--card-bg);
+            stroke: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+
+        .node-rect:hover { stroke: var(--neon-blue); }
+
+        /* Labels */
+        .label { font-size: 12px; font-weight: bold; fill: white; pointer-events: none; }
+        .status { font-size: 10px; fill: var(--neon-green); }
+
+        /* UI Controls */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: var(--neon-green);
+            color: black;
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+
+        .btn-chaos { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-chaos:hover { background: var(--neon-red); color: white; box-shadow: 0 0 20px var(--neon-red); }
+
+        #mesh-status {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-left: 4px solid var(--neon-green);
+            font-size: 12px;
+            width: 200px;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>KSCU Interactive Resilience Dashboard</h2>
-  
-  <div class="dashboard">
-    <svg viewBox="0 0 800 500" width="100%" height="100%">
-      <rect x="300" y="50" width="200" height="80" rx="10" fill="#1f3a5f" stroke="#2980b9" />
-      <text x="400" y="95" text-anchor="middle" fill="white" font-weight="bold">Azure Cloud DC</text>
+    <div class="header">
+        <h1>KSCU | SECURE OVERLAY ARCHITECTURE</h1>
+        <p>CO-MANAGED BY MATRIX IT &amp; KSCU INTERNAL TEAM</p>
+    </div>
 
-      <g class="branch" onclick="alert('Golden Status: Secure\nMSP: Matrix IT\nManaged by: Datto RMM')">
-        <rect x="50" y="350" width="150" height="100" rx="10" fill="#2d3238" stroke="#3f454f" />
-        <text x="125" y="390" text-anchor="middle" fill="white">Golden</text>
-        <text id="status-golden" x="125" y="420" text-anchor="middle" class="status-text">ONLINE</text>
-      </g>
+    <div id="mesh-status">
+        <div style="color: var(--neon-green); margin-bottom: 5px;">SYSTEM STATUS: OPTIMAL</div>
+        <div id="log-content" style="opacity: 0.7; font-family: monospace; font-size: 10px;">
+            > Appgate Controllers: Active<br>
+            > JIT Admin Access: Enabled<br>
+            > ThreatLocker: Default Deny<br>
+            > Blumira: Streaming Logs...
+        </div>
+    </div>
 
-      <g class="branch" onclick="alert('Fruitvale Status: Secure\nEncryption: AES-256')">
-        <rect x="325" y="350" width="150" height="100" rx="10" fill="#2d3238" stroke="#3f454f" />
-        <text x="400" y="390" text-anchor="middle" fill="white">Fruitvale</text>
-        <text id="status-fruitvale" x="400" y="420" text-anchor="middle" class="status-text">ONLINE</text>
-      </g>
+    <div class="dashboard-container">
+        <svg viewBox="0 0 1000 700">
+            <defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="red-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feFlood flood-color="#ff3c3c" result="color"/>
+                    <feComposite in="color" in2="blur" operator="in" result="glow"/>
+                    <feComposite in="SourceGraphic" in2="glow" operator="over" />
+                </filter>
+            </defs>
 
-      <g class="branch" onclick="alert('Trail Status: Secure\nAppgate Gateway: HA Active')">
-        <rect x="600" y="350" width="150" height="100" rx="10" fill="#2d3238" stroke="#3f454f" />
-        <text x="675" y="390" text-anchor="middle" fill="white">Trail</text>
-        <text id="status-trail" x="675" y="420" text-anchor="middle" class="status-text">ONLINE</text>
-      </g>
+            <path id="path-golden-azure" d="M 150 450 Q 200 300, 500 150" class="link-base" />
+            <path id="path-trail-azure" d="M 500 450 L 500 180" class="link-base" />
+            <path id="path-fruit-azure" d="M 850 450 Q 800 300, 500 150" class="link-base" />
+            <path id="path-fintech-azure" d="M 850 200 L 580 140" class="link-base" />
+            
+            <path id="mesh-gt" d="M 230 480 L 420 480" class="link-base" />
+            <path id="mesh-tf" d="M 580 480 L 770 480" class="link-base" />
+            <path id="mesh-gf" d="M 230 520 Q 500 580, 770 520" class="link-base" />
 
-      <line id="tunnel-gt" x1="200" y1="400" x2="325" y2="400" class="tunnel" />
-      <line id="tunnel-tf" x1="475" y1="400" x2="600" y2="400" class="tunnel" />
-      
-      <path id="reroute-path" d="M 200 350 Q 400 250 600 350" class="reroute" fill="none" />
-    </svg>
-  </div>
+            <path id="tunnel-ga" d="M 150 450 Q 200 300, 500 150" class="sdp-tunnel" />
+            <path id="tunnel-ta" d="M 500 450 L 500 180" class="sdp-tunnel" />
+            <path id="tunnel-fa" d="M 850 450 Q 800 300, 500 150" class="sdp-tunnel" />
+            <path id="tunnel-fin" d="M 850 200 L 580 140" class="sdp-tunnel" style="stroke: var(--neon-purple); filter: none; stroke-width: 2; stroke-dasharray: 5;" />
 
-  <div class="controls">
-    <button onclick="simulateFailure()">Simulate Fruitvale Link Failure</button>
-    <button onclick="resetDemo()" style="background:#3f454f; color:white; margin-left:10px;">Reset</button>
-  </div>
+            <path id="tunnel-mesh-gt" d="M 230 480 L 420 480" class="sdp-tunnel" style="stroke: var(--neon-gold); opacity: 0;" />
+            <path id="tunnel-mesh-tf" d="M 580 480 L 770 480" class="sdp-tunnel" style="stroke: var(--neon-gold); opacity: 0;" />
+            <path id="tunnel-mesh-gf" d="M 230 520 Q 500 580, 770 520" class="sdp-tunnel" style="stroke: var(--neon-gold); opacity: 0;" />
 
-  <script>
-    function simulateFailure() {
-      // Fail the direct paths
-      document.getElementById('tunnel-gt').classList.add('failed');
-      document.getElementById('tunnel-tf').classList.add('failed');
-      document.getElementById('status-fruitvale').innerHTML = "REROUTING...";
-      document.getElementById('status-fruitvale').classList.add('failed');
+            <circle r="3" class="pulse pulse-fast" style="offset-path: path('M 150 450 Q 200 300, 500 150');" />
+            <circle r="3" class="pulse pulse-med" style="offset-path: path('M 500 450 L 500 180');" />
+            <circle r="3" class="pulse pulse-fast" style="offset-path: path('M 850 450 Q 800 300, 500 150');" />
+            <circle r="3" class="pulse pulse-med" style="offset-path: path('M 850 200 L 580 140'); fill: var(--neon-purple);" />
 
-      // Activate the Mesh Reroute
-      setTimeout(() => {
-        document.getElementById('reroute-path').classList.add('active');
-        document.getElementById('status-fruitvale').innerHTML = "RESILIENT MESH ACTIVE";
-        document.getElementById('status-fruitvale').style.fill = "#f1c40f";
-      }, 800);
-    }
+            <rect x="400" y="80" width="200" height="100" class="node-rect" rx="10" />
+            <text x="500" y="125" text-anchor="middle" class="label" style="font-size: 16px;">AZURE CLOUD</text>
+            <text x="500" y="145" text-anchor="middle" class="status">VNET CLOAKED</text>
 
-    function resetDemo() {
-      document.getElementById('tunnel-gt').classList.remove('failed');
-      document.getElementById('tunnel-tf').classList.remove('failed');
-      document.getElementById('reroute-path').classList.remove('active');
-      const status = document.getElementById('status-fruitvale');
-      status.innerHTML = "ONLINE";
-      status.classList.remove('failed');
-      status.style.fill = "#2ecc71";
-    }
-  </script>
+            <rect x="780" y="150" width="140" height="80" class="node-rect" style="stroke: var(--neon-purple);" rx="10" />
+            <text x="850" y="190" text-anchor="middle" class="label">FINTECH PARTNER</text>
+            <text x="850" y="210" text-anchor="middle" class="status" style="fill: var(--neon-purple);">API ACCESS ONLY</text>
+
+            <g transform="translate(80, 450)">
+                <rect x="0" y="0" width="150" height="100" class="node-rect" rx="8" />
+                <text x="75" y="45" class="label">GOLDEN</text>
+                <text x="75" y="70" class="status">HA GATEWAY: ACTIVE</text>
+            </g>
+
+            <g transform="translate(425, 450)">
+                <rect x="0" y="0" width="150" height="100" class="node-rect" rx="8" />
+                <text x="75" y="45" class="label">TRAIL</text>
+                <text x="75" y="70" class="status">HA GATEWAY: ACTIVE</text>
+            </g>
+
+            <g transform="translate(770, 450)">
+                <rect x="0" y="0" width="150" height="100" class="node-rect" rx="8" />
+                <text x="75" y="45" class="label">FRUITVALE</text>
+                <text x="75" y="70" class="status">HA GATEWAY: ACTIVE</text>
+            </g>
+        </svg>
+
+        <div class="controls">
+            <button onclick="reset()">Refresh Baseline</button>
+            <button class="btn-chaos" onclick="triggerChaos()">Simulate Failure (Chaos Mode)</button>
+        </div>
+    </div>
+
+    <script>
+        function triggerChaos() {
+            // Visual failure
+            document.getElementById('tunnel-ta').classList.add('failed');
+            document.getElementById('tunnel-ga').style.opacity = "0.2";
+            
+            // Update Log
+            document.getElementById('mesh-status').style.borderColor = "var(--neon-red)";
+            document.getElementById('mesh-status').children[0].innerHTML = "ALERT: HARDWARE FAILURE AT BRANCH";
+            document.getElementById('mesh-status').children[0].style.color = "var(--neon-red)";
+            
+            let log = document.getElementById('log-content');
+            log.innerHTML = "> SD-WAN Primary Path: LOST<br>> Latency Spike Detected<br>> Appgate Triggering Direct Route...<br>> Establishing Mesh Connectivity...";
+
+            // Trigger Resilient Mesh
+            setTimeout(() => {
+                document.getElementById('tunnel-mesh-gt').style.opacity = "1";
+                document.getElementById('tunnel-mesh-tf').style.opacity = "1";
+                document.getElementById('tunnel-mesh-gf').style.opacity = "0.5";
+                log.innerHTML += "<br>> MESH ESTABLISHED: GOLDEN <-> TRAIL <-> FRUITVALE<br>> Uptime Maintained.";
+            }, 1000);
+        }
+
+        function reset() {
+            location.reload();
+        }
+    </script>
 </body>
 </html>
