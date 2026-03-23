@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { background: #1a1d21; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+  .dashboard { width: 800px; height: 500px; background: #2d3238; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #3f454f; }
+  .controls { margin-top: 20px; }
+  button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; background: #2ecc71; color: #1a1d21; transition: 0.3s; }
+  button:hover { background: #27ae60; transform: scale(1.05); }
+  
+  /* SVG Interactivity */
+  .branch { cursor: pointer; transition: 0.3s; }
+  .branch:hover { filter: brightness(1.2); }
+  .tunnel { stroke: #2ecc71; stroke-width: 4; transition: 0.5s; stroke-dasharray: 1000; stroke-dashoffset: 0; }
+  .tunnel.failed { stroke: #e74c3c; stroke-dasharray: 5; animation: dash 2s linear infinite; }
+  .reroute { stroke: #f1c40f; stroke-width: 4; opacity: 0; transition: 0.5s; stroke-dasharray: 5; animation: dash 5s linear infinite; }
+  .reroute.active { opacity: 1; }
+
+  @keyframes dash { to { stroke-dashoffset: -100; } }
+
+  .status-text { fill: #2ecc71; font-size: 14px; font-weight: bold; transition: 0.3s; }
+  .status-text.failed { fill: #e74c3c; }
+</style>
+</head>
+<body>
+
+  <h2>KSCU Interactive Resilience Dashboard</h2>
+  
+  <div class="dashboard">
+    <svg viewBox="0 0 800 500" width="100%" height="100%">
+      <rect x="300" y="50" width="200" height="80" rx="10" fill="#1f3a5f" stroke="#2980b9" />
+      <text x="400" y="95" text-anchor="middle" fill="white" font-weight="bold">Azure Cloud DC</text>
+
+      <g class="branch" onclick="alert('Golden Status: Secure\nMSP: Matrix IT\nManaged by: Datto RMM')">
+        <rect x="50" y="350" width="150" height="100" rx="10" fill="#2d3238" stroke="#3f454f" />
+        <text x="125" y="390" text-anchor="middle" fill="white">Golden</text>
+        <text id="status-golden" x="125" y="420" text-anchor="middle" class="status-text">ONLINE</text>
+      </g>
+
+      <g class="branch" onclick="alert('Fruitvale Status: Secure\nEncryption: AES-256')">
+        <rect x="325" y="350" width="150" height="100" rx="10" fill="#2d3238" stroke="#3f454f" />
+        <text x="400" y="390" text-anchor="middle" fill="white">Fruitvale</text>
+        <text id="status-fruitvale" x="400" y="420" text-anchor="middle" class="status-text">ONLINE</text>
+      </g>
+
+      <g class="branch" onclick="alert('Trail Status: Secure\nAppgate Gateway: HA Active')">
+        <rect x="600" y="350" width="150" height="100" rx="10" fill="#2d3238" stroke="#3f454f" />
+        <text x="675" y="390" text-anchor="middle" fill="white">Trail</text>
+        <text id="status-trail" x="675" y="420" text-anchor="middle" class="status-text">ONLINE</text>
+      </g>
+
+      <line id="tunnel-gt" x1="200" y1="400" x2="325" y2="400" class="tunnel" />
+      <line id="tunnel-tf" x1="475" y1="400" x2="600" y2="400" class="tunnel" />
+      
+      <path id="reroute-path" d="M 200 350 Q 400 250 600 350" class="reroute" fill="none" />
+    </svg>
+  </div>
+
+  <div class="controls">
+    <button onclick="simulateFailure()">Simulate Fruitvale Link Failure</button>
+    <button onclick="resetDemo()" style="background:#3f454f; color:white; margin-left:10px;">Reset</button>
+  </div>
+
+  <script>
+    function simulateFailure() {
+      // Fail the direct paths
+      document.getElementById('tunnel-gt').classList.add('failed');
+      document.getElementById('tunnel-tf').classList.add('failed');
+      document.getElementById('status-fruitvale').innerHTML = "REROUTING...";
+      document.getElementById('status-fruitvale').classList.add('failed');
+
+      // Activate the Mesh Reroute
+      setTimeout(() => {
+        document.getElementById('reroute-path').classList.add('active');
+        document.getElementById('status-fruitvale').innerHTML = "RESILIENT MESH ACTIVE";
+        document.getElementById('status-fruitvale').style.fill = "#f1c40f";
+      }, 800);
+    }
+
+    function resetDemo() {
+      document.getElementById('tunnel-gt').classList.remove('failed');
+      document.getElementById('tunnel-tf').classList.remove('failed');
+      document.getElementById('reroute-path').classList.remove('active');
+      const status = document.getElementById('status-fruitvale');
+      status.innerHTML = "ONLINE";
+      status.classList.remove('failed');
+      status.style.fill = "#2ecc71";
+    }
+  </script>
+</body>
+</html>
