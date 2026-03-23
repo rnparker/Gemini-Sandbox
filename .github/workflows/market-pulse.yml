@@ -21,7 +21,10 @@ jobs:
           python-version: '3.10'
 
       - name: Install Dependencies
-        run: pip install requests
+        run: pip install -r requirements.txt
+
+      - name: Run Tests
+        run: pytest tests/
 
       - name: Run Spread Scraper
         # This script now reads the CSV, fetches recent BoC data, 
