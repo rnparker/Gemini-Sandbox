@@ -1,264 +1,495 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>KSCU | Appgate Cyber-Resilience Dashboard</title>
-    <style>
-        :root {
-            --bg: #0b0e14;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --neon-green: #00ff88;
-            --neon-blue: #00d9ff;
-            --neon-purple: #bc00ff;
-            --neon-red: #ff3c3c;
-            --neon-gold: #ffcc00;
-            --font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KSCU :: APPGATE SDP :: MATRIX NOC</title>
+<style>
+    /* 1. Global Aesthetic & Theming */
+    :root {
+        --bg-color: #050505;
+        --text-primary: #00FF41; /* Classic Matrix Green */
+        --text-accent: #00FFFF;  /* Electric Cyan */
+        --text-alert: #FF003C;   /* Neon Red */
+        --node-fill: rgba(0, 30, 0, 0.6);
+        --node-stroke: #00FF41;
+        --font-stack: 'Fira Code', 'Consolas', 'Courier New', monospace;
+        --glow: drop-shadow(0 0 8px rgba(0, 255, 65, 0.8));
+        --glow-accent: drop-shadow(0 0 12px rgba(0, 255, 255, 0.9));
+        --glow-alert: drop-shadow(0 0 10px rgba(255, 0, 60, 1));
+    }
 
-        body {
-            background-color: var(--bg);
-            color: white;
-            font-family: var(--font);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+    body.light-mode {
+        --bg-color: #F0F4F0;
+        --text-primary: #004400;
+        --text-accent: #005555;
+        --text-alert: #880000;
+        --node-fill: rgba(200, 230, 200, 0.7);
+        --node-stroke: #006600;
+        --glow: none;
+        --glow-accent: none;
+        --glow-alert: none;
+    }
 
-        .header {
-            position: absolute;
-            top: 20px;
-            text-align: center;
-            z-index: 10;
-        }
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: var(--font-stack);
+        margin: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        transition: background-color 0.3s, color 0.3s;
+    }
 
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            letter-spacing: 2px;
-            color: var(--neon-green);
-            text-shadow: 0 0 10px var(--neon-green);
-        }
+    /* Matrix Digital Rain Background Canvas */
+    #canvas-rain {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0.15;
+        pointer-events: none;
+        z-index: 1;
+    }
+    body.light-mode #canvas-rain { opacity: 0.05; }
 
-        .header p {
-            margin: 5px 0;
-            opacity: 0.6;
-            font-size: 14px;
-        }
+    /* Layout */
+    #noc-interface {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        z-index: 2; /* Above rain */
+        position: relative;
+    }
 
-        .dashboard-container {
-            position: relative;
-            width: 1000px;
-            height: 700px;
-            background: radial-gradient(circle at center, #161b22 0%, #0b0e14 100%);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
+    header {
+        padding: 15px 25px;
+        border-bottom: 1px solid var(--node-stroke);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
+    }
 
-        /* SVG Styles */
-        svg { width: 100%; height: 100%; }
+    header h1 { margin: 0; font-size: 18px; letter-spacing: 2px; filter: var(--glow); }
+    
+    .view-controls { display: flex; gap: 15px; }
+    .status-bar { font-size: 12px; opacity: 0.8; }
+    .status-bar b { color: var(--text-accent); }
 
-        .link-base { stroke: rgba(255,255,255,0.05); stroke-width: 2; fill: none; }
-        
-        .sdp-tunnel {
-            fill: none;
-            stroke: var(--neon-green);
-            stroke-width: 3;
-            stroke-linecap: round;
-            filter: url(#glow);
-            opacity: 0.8;
-            transition: all 0.5s ease;
-        }
+    /* SVG Diagram Styling */
+    #diagram-container {
+        flex: 1;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        .sdp-tunnel.failed { stroke: var(--neon-red); filter: url(#red-glow); stroke-dasharray: 10; }
+    svg {
+        width: 100%;
+        height: 100%;
+        max-width: 1200px;
+        max-height: 800px;
+    }
 
-        /* Data Pulse Animation */
-        .pulse {
-            fill: var(--neon-green);
-            filter: url(#glow);
-        }
+    /* Nodes (isometric cubes/hexagons) */
+    .node-geom {
+        fill: var(--node-fill);
+        stroke: var(--node-stroke);
+        stroke-width: 1.5;
+        filter: var(--glow);
+        transition: transform 0.2s, stroke 0.3s, fill 0.3s;
+    }
+    
+    .node:hover .node-geom {
+        stroke: var(--text-accent);
+        fill: rgba(0, 50, 50, 0.8);
+        transform: scale(1.05) translate(-2.5%, -2.5%);
+    }
 
-        .pulse-fast { animation: flow 3s linear infinite; }
-        .pulse-med { animation: flow 5s linear infinite; }
+    /* Dynamic Node Pulsing */
+    @keyframes nodePulse {
+        0% { stroke-width: 1.5; filter: var(--glow); }
+        50% { stroke-width: 2.5; filter: drop-shadow(0 0 12px rgba(0, 255, 65, 1)); }
+        100% { stroke-width: 1.5; filter: var(--glow); }
+    }
+    .anim-on .node-geom { animation: nodePulse 3s infinite ease-in-out; }
 
-        @keyframes flow {
-            from { offset-distance: 0%; }
-            to { offset-distance: 100%; }
-        }
+    .node-text {
+        fill: var(--text-primary);
+        font-size: 11px;
+        pointer-events: none;
+        transition: fill 0.3s;
+    }
+    .node:hover .node-text { fill: var(--text-accent); }
+    
+    .ip-text { fill: rgba(255,255,255,0.5); font-size: 9px; }
+    body.light-mode .ip-text { fill: rgba(0,0,0,0.6); }
 
-        /* Nodes / Glassmorphism */
-        .node-rect {
-            fill: var(--card-bg);
-            stroke: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            transition: 0.3s;
-        }
+    /* Interconnects (Data Streams) */
+    .link-base {
+        fill: none;
+        stroke: rgba(0, 255, 65, 0.1);
+        stroke-width: 1;
+    }
+    body.light-mode .link-base { stroke: rgba(0, 68, 0, 0.1); }
 
-        .node-rect:hover { stroke: var(--neon-blue); }
+    .data-stream {
+        fill: none;
+        stroke: var(--node-stroke);
+        stroke-width: 2;
+        stroke-linecap: round;
+        filter: var(--glow);
+        stroke-dasharray: 10, 20; /* Flowing dashes */
+        transition: stroke 0.3s, stroke-width 0.3s;
+    }
 
-        /* Labels */
-        .label { font-size: 12px; font-weight: bold; fill: white; pointer-events: none; }
-        .status { font-size: 10px; fill: var(--neon-green); }
+    /* Flow Animation */
+    @keyframes dataFlow {
+        to { stroke-dashoffset: -150; }
+    }
+    .anim-on .data-stream { animation: dataFlow 5s linear infinite; }
 
-        /* UI Controls */
-        .controls {
-            position: absolute;
-            bottom: 30px;
-            display: flex;
-            gap: 20px;
-        }
+    /* Status Modifier Classes */
+    .link-active { stroke: var(--text-accent); stroke-width: 3; filter: var(--glow-accent); }
+    .anim-on .link-active { animation-duration: 2s; } /* Faster flow */
 
-        button {
-            background: transparent;
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: 0.3s;
-        }
+    .link-fail { stroke: var(--text-alert); stroke-width: 2; stroke-dasharray: 5, 5; filter: var(--glow-alert); }
+    .anim-on .link-fail { animation-duration: 10s; } /* Sluggish flow */
 
-        button:hover {
-            background: var(--neon-green);
-            color: black;
-            box-shadow: 0 0 20px var(--neon-green);
-        }
+    .node-fail .node-geom { stroke: var(--text-alert); filter: var(--glow-alert); }
 
-        .btn-chaos { border-color: var(--neon-red); color: var(--neon-red); }
-        .btn-chaos:hover { background: var(--neon-red); color: white; box-shadow: 0 0 20px var(--neon-red); }
+    /* Glitch Effect on Text */
+    @keyframes textGlitch {
+        0% { text-shadow: 0.5px 0 0 var(--text-alert), -0.5px 0 0 var(--text-accent); }
+        2% { text-shadow: 1px 0 0 var(--text-alert), -1px 0 0 var(--text-accent); }
+        4% { text-shadow: 0.5px 0 0 var(--text-alert), -0.5px 0 0 var(--text-accent); }
+        100% { text-shadow: none; }
+    }
+    .glitch-text { animation: textGlitch 4s infinite; }
 
-        #mesh-status {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            background: rgba(0,0,0,0.5);
-            padding: 15px;
-            border-left: 4px solid var(--neon-green);
-            font-size: 12px;
-            width: 200px;
-        }
-    </style>
+    /* Sidebar/Log */
+    #sidebar {
+        position: absolute;
+        top: 80px;
+        right: 20px;
+        width: 250px;
+        height: 300px;
+        background: rgba(0,0,0,0.7);
+        border: 1px solid var(--node-stroke);
+        border-radius: 8px;
+        padding: 15px;
+        font-size: 11px;
+        display: flex;
+        flex-direction: column;
+        backdrop-filter: blur(5px);
+    }
+    body.light-mode #sidebar { background: rgba(255,255,255,0.8); border-color: #ccc; }
+
+    #log-stream { flex: 1; overflow-y: hidden; color: #888; }
+    .log-entry { margin-bottom: 4px; border-left: 2px solid #333; padding-left: 5px; }
+    .log-entry.secure { border-left-color: var(--text-primary); color: var(--text-primary); }
+    .log-entry.alert { border-left-color: var(--text-alert); color: var(--text-alert); }
+
+    /* UI Widgets */
+    .ui-btn {
+        background: transparent;
+        border: 1px solid var(--node-stroke);
+        color: var(--text-primary);
+        font-family: var(--font-stack);
+        font-size: 12px;
+        padding: 6px 12px;
+        cursor: pointer;
+        transition: 0.2s;
+        border-radius: 4px;
+    }
+    .ui-btn:hover { background: rgba(0,255,65,0.1); border-color: var(--text-accent); color: var(--text-accent); }
+    .ui-btn.active { background: rgba(0,255,65,0.2); box-shadow: 0 0 10px rgba(0,255,65,0.5); }
+
+</style>
 </head>
-<body>
+<body class="anim-on dark-mode">
 
-    <div class="header">
-        <h1>KSCU | SECURE OVERLAY ARCHITECTURE</h1>
-        <p>CO-MANAGED BY MATRIX IT &amp; KSCU INTERNAL TEAM</p>
-    </div>
+<canvas id="canvas-rain"></canvas>
 
-    <div id="mesh-status">
-        <div style="color: var(--neon-green); margin-bottom: 5px;">SYSTEM STATUS: OPTIMAL</div>
-        <div id="log-content" style="opacity: 0.7; font-family: monospace; font-size: 10px;">
-            > Appgate Controllers: Active<br>
-            > JIT Admin Access: Enabled<br>
-            > ThreatLocker: Default Deny<br>
-            > Blumira: Streaming Logs...
+<div id="noc-interface">
+    <header>
+        <h1>KSCU // APPGATE SDP // M&A BLUEPRINT V4.1</h1>
+        <div class="view-controls">
+            <span class="status-bar">LOC: <b>GOLDEN, BC</b> // OP: <b>MATRIX IT</b></span>
+            <button class="ui-btn active" onclick="toggleAnim(this)">ANIM: ON</button>
+            <button class="ui-btn" onclick="toggleTheme(this)">MODE: DARK</button>
         </div>
-    </div>
+    </header>
 
-    <div class="dashboard-container">
+    <div id="diagram-container">
+        <div id="sidebar">
+            <div style="color: var(--text-accent); margin-bottom: 10px; font-weight: bold; font-size: 12px;">> Blumira SIEM Live Feed</div>
+            <div id="log-stream">
+                </div>
+        </div>
+
         <svg viewBox="0 0 1000 700">
             <defs>
-                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="4" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-                <filter id="red-glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="6" result="blur" />
-                    <feFlood flood-color="#ff3c3c" result="color"/>
-                    <feComposite in="color" in2="blur" operator="in" result="glow"/>
-                    <feComposite in="SourceGraphic" in2="glow" operator="over" />
-                </filter>
-            </defs>
+                </defs>
 
-            <path id="path-golden-azure" d="M 150 450 Q 200 300, 500 150" class="link-base" />
-            <path id="path-trail-azure" d="M 500 450 L 500 180" class="link-base" />
-            <path id="path-fruit-azure" d="M 850 450 Q 800 300, 500 150" class="link-base" />
-            <path id="path-fintech-azure" d="M 850 200 L 580 140" class="link-base" />
+            <g id="links-base">
+                <path d="M 150 500 Q 250 300, 500 150" class="link-base"/>
+                <path d="M 500 500 L 500 230" class="link-base"/>
+                <path d="M 850 500 Q 750 300, 500 150" class="link-base"/>
+                
+                <path d="M 230 530 L 420 530" class="link-base"/>
+                <path d="M 580 530 L 770 530" class="link-base"/>
+                <path d="M 230 570 Q 500 650, 770 570" class="link-base"/>
+            </g>
+
+            <g id="tunnels-active">
+                <path id="tunnel-ga" d="M 150 500 Q 250 300, 500 150" class="data-stream link-active"/>
+                <path id="tunnel-ta" d="M 500 500 L 500 230" class="data-stream link-active"/>
+                <path id="tunnel-fa" d="M 850 500 Q 750 300, 500 150" class="data-stream link-active"/>
+                
+                <path id="mesh-gt" d="M 230 530 L 420 530" class="data-stream" style="stroke-opacity: 0.4;"/>
+                <path id="mesh-tf" d="M 580 530 L 770 530" class="data-stream" style="stroke-opacity: 0.4;"/>
+                <path id="mesh-gf" d="M 230 570 Q 500 650, 770 570" class="data-stream" style="stroke-opacity: 0.2;"/>
+                
+                <path d="M 850 200 L 620 160" class="data-stream" style="stroke: var(--text-accent); stroke-dasharray: 4, 8;"/>
+            </g>
+
+            <g id="nodes">
+                <g class="node" transform="translate(420, 60)">
+                    <polygon points="80,0 160,40 160,120 80,160 0,120 0,40" class="node-geom"/>
+                    <text x="80" y="70" text-anchor="middle" class="node-text glitch-text" style="font-size: 14px; font-weight: bold;">AZURE VNET</text>
+                    <text x="80" y="90" text-anchor="middle" class="node-text status">CLOAKED GATEWAY HA</text>
+                    <text x="80" y="110" text-anchor="middle" class="node-text ip-text">10.100.0.0/16</text>
+                </g>
+
+                <g class="node" transform="translate(770, 100)">
+                    <polygon points="80,0 160,40 160,120 80,160 0,120 0,40" class="node-geom" style="stroke: var(--text-accent);"/>
+                    <text x="80" y="70" text-anchor="middle" class="node-text" style="fill: var(--text-accent);">FINTECH_API</text>
+                    <text x="80" y="90" text-anchor="middle" class="node-text ip-text">EXTERNAL_TRUST</text>
+                </g>
+
+                <defs>
+                    <g id="branch-node-template">
+                        <polyline points="50,0 100,30 100,100 50,130" style="fill:none; stroke-opacity:0.3; stroke-width:1;" class="node-stroke-dyn"/>
+                        <line x1="100" y1="30" x2="0" y2="30" style="fill:none; stroke-opacity:0.3; stroke-width:1;" class="node-stroke-dyn"/>
+                        <polygon points="50,0 100,30 50,60 0,30" class="node-geom"/><polygon points="0,30 50,60 50,130 0,100" class="node-geom"/><polygon points="50,60 100,30 100,100 50,130" class="node-geom"/><text x="50" y="25" text-anchor="middle" class="node-text label-name" style="transform: skewY(-15deg);">BRANCH_ID</text>
+                        <text x="25" y="75" text-anchor="middle" class="node-text status" style="transform: skewY(30deg); fill: var(--text-accent);">HA_CTRLR: OK</text>
+                    </g>
+                </defs>
+
+                <g class="node" transform="translate(80, 480)">
+                    <use href="#branch-node-template"/>
+                    <text x="50" y="25" text-anchor="middle" class="node-text glitch-text" style="transform: skewY(-15deg); font-weight:bold;">GOLDEN</text>
+                    <text x="50" y="150" text-anchor="middle" class="node-text ip-text">10.10.1.0/24</text>
+                </g>
+
+                <g class="node" transform="translate(450, 480)" id="node-trail">
+                    <use href="#branch-node-template"/>
+                    <text x="50" y="25" text-anchor="middle" class="node-text" style="transform: skewY(-15deg); font-weight:bold;">TRAIL</text>
+                    <text x="50" y="150" text-anchor="middle" class="node-text ip-text">10.20.1.0/24</text>
+                </g>
+
+                <g class="node" transform="translate(800, 480)">
+                    <use href="#branch-node-template"/>
+                    <text x="50" y="25" text-anchor="middle" class="node-text" style="transform: skewY(-15deg); font-weight:bold;">FRUITVALE</text>
+                    <text x="50" y="150" text-anchor="middle" class="node-text ip-text">10.30.1.0/24</text>
+                </g>
+
+                <g class="node" transform="translate(180, 580)" onclick="simulateThreat()">
+                    <polygon points="40,0 80,20 80,60 40,80 0,60 0,20" class="node-geom" style="stroke: var(--text-alert); fill: rgba(50,0,0,0.6);"/>
+                    <text x="40" y="35" text-anchor="middle" class="node-text" style="fill: var(--text-alert); font-size:10px;">LEGACY_SRV</text>
+                    <text x="40" y="50" text-anchor="middle" class="node-text ip-text">UNPATCHED</text>
+                </g>
+
+            </g>
             
-            <path id="mesh-gt" d="M 230 480 L 420 480" class="link-base" />
-            <path id="mesh-tf" d="M 580 480 L 770 480" class="link-base" />
-            <path id="mesh-gf" d="M 230 520 Q 500 580, 770 520" class="link-base" />
-
-            <path id="tunnel-ga" d="M 150 450 Q 200 300, 500 150" class="sdp-tunnel" />
-            <path id="tunnel-ta" d="M 500 450 L 500 180" class="sdp-tunnel" />
-            <path id="tunnel-fa" d="M 850 450 Q 800 300, 500 150" class="sdp-tunnel" />
-            <path id="tunnel-fin" d="M 850 200 L 580 140" class="sdp-tunnel" style="stroke: var(--neon-purple); filter: none; stroke-width: 2; stroke-dasharray: 5;" />
-
-            <path id="tunnel-mesh-gt" d="M 230 480 L 420 480" class="sdp-tunnel" style="stroke: var(--neon-gold); opacity: 0;" />
-            <path id="tunnel-mesh-tf" d="M 580 480 L 770 480" class="sdp-tunnel" style="stroke: var(--neon-gold); opacity: 0;" />
-            <path id="tunnel-mesh-gf" d="M 230 520 Q 500 580, 770 520" class="sdp-tunnel" style="stroke: var(--neon-gold); opacity: 0;" />
-
-            <circle r="3" class="pulse pulse-fast" style="offset-path: path('M 150 450 Q 200 300, 500 150');" />
-            <circle r="3" class="pulse pulse-med" style="offset-path: path('M 500 450 L 500 180');" />
-            <circle r="3" class="pulse pulse-fast" style="offset-path: path('M 850 450 Q 800 300, 500 150');" />
-            <circle r="3" class="pulse pulse-med" style="offset-path: path('M 850 200 L 580 140'); fill: var(--neon-purple);" />
-
-            <rect x="400" y="80" width="200" height="100" class="node-rect" rx="10" />
-            <text x="500" y="125" text-anchor="middle" class="label" style="font-size: 16px;">AZURE CLOUD</text>
-            <text x="500" y="145" text-anchor="middle" class="status">VNET CLOAKED</text>
-
-            <rect x="780" y="150" width="140" height="80" class="node-rect" style="stroke: var(--neon-purple);" rx="10" />
-            <text x="850" y="190" text-anchor="middle" class="label">FINTECH PARTNER</text>
-            <text x="850" y="210" text-anchor="middle" class="status" style="fill: var(--neon-purple);">API ACCESS ONLY</text>
-
-            <g transform="translate(80, 450)">
-                <rect x="0" y="0" width="150" height="100" class="node-rect" rx="8" />
-                <text x="75" y="45" class="label">GOLDEN</text>
-                <text x="75" y="70" class="status">HA GATEWAY: ACTIVE</text>
+            <g id="sim-overlays" style="pointer-events: none;">
+                <path id="fail-path-trail" d="M 500 500 L 500 230" class="data-stream link-fail" style="opacity:0;"/>
+                <circle id="ringfence" cx="220" cy="620" r="50" style="fill:none; stroke:var(--text-alert); stroke-width:3; stroke-dasharray: 2 4; opacity:0;"/>
             </g>
 
-            <g transform="translate(425, 450)">
-                <rect x="0" y="0" width="150" height="100" class="node-rect" rx="8" />
-                <text x="75" y="45" class="label">TRAIL</text>
-                <text x="75" y="70" class="status">HA GATEWAY: ACTIVE</text>
-            </g>
-
-            <g transform="translate(770, 450)">
-                <rect x="0" y="0" width="150" height="100" class="node-rect" rx="8" />
-                <text x="75" y="45" class="label">FRUITVALE</text>
-                <text x="75" y="70" class="status">HA GATEWAY: ACTIVE</text>
-            </g>
         </svg>
-
-        <div class="controls">
-            <button onclick="reset()">Refresh Baseline</button>
-            <button class="btn-chaos" onclick="triggerChaos()">Simulate Failure (Chaos Mode)</button>
-        </div>
     </div>
+</div>
 
-    <script>
-        function triggerChaos() {
-            // Visual failure
-            document.getElementById('tunnel-ta').classList.add('failed');
-            document.getElementById('tunnel-ga').style.opacity = "0.2";
-            
-            // Update Log
-            document.getElementById('mesh-status').style.borderColor = "var(--neon-red)";
-            document.getElementById('mesh-status').children[0].innerHTML = "ALERT: HARDWARE FAILURE AT BRANCH";
-            document.getElementById('mesh-status').children[0].style.color = "var(--neon-red)";
-            
-            let log = document.getElementById('log-content');
-            log.innerHTML = "> SD-WAN Primary Path: LOST<br>> Latency Spike Detected<br>> Appgate Triggering Direct Route...<br>> Establishing Mesh Connectivity...";
+<script>
+    // --- Matrix Digital Rain Effect ---
+    const canvas = document.getElementById('canvas-rain');
+    const ctx = canvas.getContext('2d');
 
-            // Trigger Resilient Mesh
+    let w, h, columns;
+    const fontSize = 14;
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<html></body><script>_$_[]+-*/<>".split("");
+    let drops = [];
+
+    function initRain() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        columns = Math.floor(w / fontSize);
+        drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+    }
+
+    function drawRain() {
+        // Subtle fade effect for tails
+        const isDarkMode = !document.body.classList.contains('light-mode');
+        ctx.fillStyle = isDarkMode ? 'rgba(5, 5, 5, 0.05)' : 'rgba(240, 244, 240, 0.05)';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.fillStyle = isDarkMode ? '#00FF41' : '#004400'; // Matrix Green
+        ctx.font = fontSize + 'px var(--font-stack)';
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > h && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    let rainInterval;
+    function startRain() {
+        clearInterval(rainInterval);
+        initRain();
+        rainInterval = setInterval(drawRain, 33); // ~30 FPS
+    }
+
+    // --- NOC Interactivity & Simulation ---
+
+    // Toggle Animation
+    function toggleAnim(btn) {
+        document.body.classList.toggle('anim-on');
+        const isOn = document.body.classList.contains('anim-on');
+        btn.textContent = isOn ? 'ANIM: ON' : 'ANIM: OFF';
+        btn.classList.toggle('active');
+        addLog(`Animation engine ${isOn ? 'engaged' : 'halted'}.`);
+    }
+
+    // Toggle Theme (Dark/Light)
+    function toggleTheme(btn) {
+        document.body.classList.toggle('light-mode');
+        const isLight = document.body.classList.contains('light-mode');
+        btn.textContent = isLight ? 'MODE: LIGHT' : 'MODE: DARK';
+        btn.classList.toggle('active');
+        addLog(`UI visual theme shifted to ${isLight ? 'stark' : 'cyber'}.`);
+    }
+
+    // Blumira Log Simulation
+    const logStream = document.getElementById('log-stream');
+    const logMessages = [
+        { type: 'secure', msg: "Identity verified: rob.admin@kscu.com via AzureAD." },
+        { type: 'info',   msg: "Policy sync complete. 16 Appgate nodes compliant." },
+        { type: 'info',   msg: "Starlink backup circuit active at Golden site." },
+        { type: 'info',   msg: "Data pulse latency optimal < 15ms via Direct Routing." },
+        { type: 'secure', msg: "ThreatLocker ringfence active on Legacy_Srv." },
+        { type: 'secure', msg: "CyberQP generated JIT admin credentials for DattoRMM." }
+    ];
+
+    function addLog(msg, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+        entry.textContent = `[${timestamp}] > ${msg}`;
+        logStream.prepend(entry);
+        
+        // Trim log
+        while (logStream.children.length > 20) {
+            logStream.removeChild(logStream.lastChild);
+        }
+    }
+
+    // Simulate periodic logs
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            const log = logMessages[Math.floor(Math.random() * logMessages.length)];
+            addLog(log.msg, log.type);
+        }
+    }, 4000);
+
+    // --- Scenario Simulations ---
+
+    // 1. Simulate ThreatLocker Block on Legacy Server
+    function simulateThreat() {
+        addLog("CRITICAL: Unauthorized process execution attempt on Legacy_Srv!", 'alert');
+        const ring = document.getElementById('ringfence');
+        ring.style.opacity = "1";
+        
+        // Dynamic "scrolling number" effect inside sidebar
+        let count = 0;
+        const glitchInt = setInterval(() => {
+            addLog(`Blocking entropy block... 0x${Math.floor(Math.random()*16777215).toString(16)}`, 'alert');
+            count++;
+            if(count > 5) {
+                clearInterval(glitchInt);
+                addLog("ThreatLocker: Attack neutralized via Default Deny policy. No lateral movement detected.", 'secure');
+                setTimeout(() => ring.style.opacity = "0", 2000);
+            }
+        }, 200);
+    }
+
+    // 2. Simulate Resilience Failover (Trail SD-WAN link down)
+    function simulateFailover() {
+        setTimeout(() => {
+            addLog("ALERT: SD-WAN Primary Controller heartbeat lost at Trail Branch.", 'alert');
+            
+            // Visual changes
+            const tnlTa = document.getElementById('tunnel-ta');
+            const failPath = document.getElementById('fail-path-trail');
+            const trailNode = document.getElementById('node-trail');
+            const meshGt = document.getElementById('mesh-gt');
+            const meshTf = document.getElementById('mesh-tf');
+
+            tnlTa.style.opacity = "0";
+            failPath.style.opacity = "1";
+            trailNode.classList.add('node-fail');
+            
+            // Update node status text within Trail
+            trailNode.querySelector('.status').textContent = "HA_CTRLR: FAIL";
+            trailNode.querySelector('.status').style.fill = "var(--text-alert)";
+
             setTimeout(() => {
-                document.getElementById('tunnel-mesh-gt').style.opacity = "1";
-                document.getElementById('tunnel-mesh-tf').style.opacity = "1";
-                document.getElementById('tunnel-mesh-gf').style.opacity = "0.5";
-                log.innerHTML += "<br>> MESH ESTABLISHED: GOLDEN <-> TRAIL <-> FRUITVALE<br>> Uptime Maintained.";
-            }, 1000);
-        }
+                addLog("Appgate SDP: Initiating Direct Routing failover to adjacent nodes.", 'secure');
+                
+                // Activate Mesh Paths
+                meshGt.classList.add('link-active');
+                meshGt.style.stroke = "var(--text-gold)";
+                meshGt.style.strokeOpacity = "1";
+                
+                meshTf.classList.add('link-active');
+                meshTf.style.stroke = "var(--text-gold)";
+                meshTf.style.strokeOpacity = "1";
 
-        function reset() {
-            location.reload();
-        }
-    </script>
+                addLog("TRAFFIC RE-ROUTED: Trail -> Golden -> Azure // Trail -> Fruitvale -> Azure.", 'secure');
+                
+                setTimeout(() => {
+                    addLog("KSCU services maintained. Branch uptime unaffected.", 'secure');
+                }, 1500);
+
+            }, 2000);
+
+        }, 1000);
+    }
+
+    // Initialize
+    window.onload = () => {
+        startRain();
+        addLog("NOC Systems initialized. Appgate SDP Network Optimal.");
+        addLog("Monitoring 16 sites via co-managed Matrix IT interface.");
+        
+        // Trigger a failure simulation after 10 seconds to show off the effect
+        setTimeout(simulateFailover, 10000);
+    };
+
+    window.onresize = initRain;
+
+</script>
 </body>
 </html>
