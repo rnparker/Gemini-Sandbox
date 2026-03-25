@@ -73,7 +73,7 @@ def generate_summary():
 
     # Prepare data for prompt
     data_summary = "\n".join([
-        f"Date: {r['date']}, 2Y: {r['yield_2y']}%, 5Y: {r['yield_5y']}%, Spread: {r['spread']}%"
+        f"Date: {r['date']}, 2Y: {r['yield_2y']}%, 5Y: {r['yield_5y']}%, Spread: {r['spread']}%, Best 5Y Fixed: {r.get('mortgage_5y', 'N/A')}%, Margin: {r.get('lending_margin', 'N/A')}%"
         for r in data
     ])
 
@@ -86,24 +86,25 @@ def generate_summary():
 You are a senior market analyst for a Small Canadian FI. 
 Today's date is {current_date_str}.
 
-Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) from the last 30 days:
+Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) and institutional mortgage data from the last 30 days:
 
 {data_summary}
 {prev_context}
 
-Your task is to provide a concise summary (2-3 paragraphs) for a dashboard.
+Your task is to provide a revised and improved concise summary (2-3 paragraphs) for a dashboard.
 
 Requirements:
-1. Research and incorporate the LATEST market context for Canadian and US bond markets as of {current_date_str}. 
-2. Explain the current trend in the 2-year and 5-year yields.
-3. Correlate the data with current events (central bank decisions, inflation data, economic releases, and relevant US Treasury market dynamics).
-4. Explain what this means for a Canadian Financial Institution (FI) specifically regarding:
+1. Research and incorporate the LATEST major market happenings for Canadian and US bond markets as of {current_date_str}.
+2. Explicitly correlate the data with these happenings (e.g., specific central bank speeches, policy changes, geopolitical events, key economic data like CPI/Jobs, and US Treasury volatility).
+3. Explain the current trend in the 2-year and 5-year yields and the resulting spread.
+4. Integrate the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' into your analysis. How are these responding to the underlying bond moves?
+5. Explain what this means for a Canadian Financial Institution (FI) specifically regarding:
    - Setting mortgage rates (how the 5Y yield impacts fixed rates).
    - Setting deposit rates (how the 2Y yield impacts GICs).
-   - Lending margins and profitability.
-5. Highlight the impact of the US-Canada bond market link.
-6. Use the 'Previous Analysis Context' to maintain continuity in your narrative, but provide a fresh update based on {current_date_str} events.
-7. Keep the tone professional, insightful, and concise.
+   - Lending margins and institutional profitability.
+6. Highlight the impact of the US-Canada bond market link.
+7. Use the 'Previous Analysis Context' to maintain continuity in your narrative, but provide a fresh update based on {current_date_str} events.
+8. Keep the tone professional, insightful, and concise. 
 
 Output the summary in plain text.
 """
