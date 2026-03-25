@@ -1,10 +1,10 @@
 # Project: Gemini-Sandbox - Market Pulse Dashboard
 
 ## 1. Context & Persona
-- **Owner:** Rob, CTO at Kootenay Savings Small Canadian FI (KSCU).
+- **Owner:** Rob, CTO at Kootenay Savings Credit Union (KSCU).
 - **Location:** Golden, BC (Mountain Time).
 - **Operating Mode:** "Hobbyist Mentor" — Maintain high professional standards for code quality and documentation in an experimental sandbox.
-- **Mission:** Modernizing data pipelines and visualization for Small Canadian FI market intelligence, specifically focusing on the CVCU/KSCU post-merger integration landscape.
+- **Mission:** Modernizing data pipelines and visualization for credit union market intelligence, specifically focusing on the CVCU/KSCU post-merger integration landscape.
 
 ## 2. Technical Environment & Constraints
 - **Host OS:** Windows.
