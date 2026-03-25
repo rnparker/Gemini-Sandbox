@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import csv
 import os
 import json
@@ -81,11 +81,13 @@ Output the summary in plain text.
 """
 
     try:
-        genai.configure(api_key=API_KEY)
-        model = genai.GenerativeModel("gemini-3-flash")
+        client = genai.Client(api_key=API_KEY)
         
-        print("📡 Generating AI summary from Gemini 3 Flash...")
-        response = model.generate_content(prompt)
+        print("📡 Generating AI summary from Gemini 3 Flash (Preview)...")
+        response = client.models.generate_content(
+            model='gemini-3-flash-preview',
+            contents=prompt
+        )
         summary_text = response.text.strip()
         
         # Save to JSON
