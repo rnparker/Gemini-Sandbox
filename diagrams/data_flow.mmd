@@ -7,15 +7,19 @@ graph TD
     E --> F[Merge Existing & New Data]
     F --> G[Sort All Data by Date - Ascending]
     G --> H[Rewrite CSV File]
-    H --> I[Commit & Push Changes]
+    H --> I[AI Summary Script]
+    I --> J[Generate summary.json via Gemini]
+    J --> K[Commit & Push Changes]
     end
 
     subgraph Frontend
-    J[User Opens index.html] --> K[PapaParse Reads CSV]
-    K --> L[Filter Valid Rows]
-    L --> M[Extract Last Entry Date]
-    M --> N[Update last-updated Span]
-    L --> O[Render Charts]
+    L[User Opens index.html] --> M[PapaParse Reads CSV]
+    M --> N[Filter Valid Rows]
+    N --> O[Extract Last Entry Date]
+    O --> P[Update last-updated Span]
+    M --> Q[Fetch summary.json]
+    Q --> R[Display AI Analysis Card]
+    N --> S[Render Charts]
     end
 
-    I -.-> K
+    K -.-> M

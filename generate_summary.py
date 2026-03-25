@@ -5,8 +5,9 @@ import json
 from datetime import datetime
 
 # Configuration
-CSV_FILE = "docs/historical_spread.csv"
-SUMMARY_FILE = "docs/summary.json"
+CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
+# Save summary in the same directory as the CSV
+SUMMARY_FILE = os.path.join(os.path.dirname(CSV_FILE), "summary.json")
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Context gathered on March 24, 2026:
