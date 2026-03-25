@@ -31,11 +31,16 @@ jobs:
         # and appends only new, unique entries.
         run: python pulse_check.py 
 
+      - name: Generate AI Summary
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python generate_summary.py
+
       - name: Commit and Push Data
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          git add docs/historical_spread.csv
-          # Only commit if there are actual changes to the file
-          git commit -m "data: update historical spread [skip ci]" || echo "No changes to commit"
+          git add docs/historical_spread.csv docs/summary.json
+          # Only commit if there are actual changes to the files
+          git commit -m "data: update historical spread and AI summary [skip ci]" || echo "No changes to commit"
           git push
