@@ -1,4 +1,4 @@
-# Project: Gemini-Sandbox - Market Pulse Dashboard
+﻿# Project: Gemini-Sandbox - Market Pulse Dashboard
 
 ## 1. Context & Persona
 - **Owner:** Rob, CTO at Kootenay Savings Credit Union (KSCU).
@@ -7,6 +7,7 @@
 - **Mission:** Modernizing data pipelines and visualization for credit union market intelligence, specifically focusing on the CVCU/KSCU post-merger integration landscape.
 
 ## 2. Technical Environment & Constraints
+- **Repository Access:** **Owner:** `rnparker` | **Repo Name:** `Gemini-Sandbox`
 - **Host OS:** Windows.
 - **Shell:** PowerShell 5.1 (Native). **STRICT CONSTRAINT:** Never use Bash syntax (no `&&`, `||`, or `export`). Use `;` for sequencing and `$env:VAR` for environment variables.
 - **Language:** Python 3.10+.
@@ -22,12 +23,12 @@
   - **Schema:** Detailed parsing logic and JSON structure are defined in `@MORTGAGE_SPEC.md`.
 
 ## 4. Project Glossary & Logic
-- **Yield Spread:** The difference between `CAN 2Y` and `CAN 5Y` bond yields.
+- **Yield Spread:** The difference between `CAN 2Y` and `CAN 5Y` bond yields.   
 - **Lending Margin:** Calculated as: `Best 5Y Fixed Rate` (from Ratehub) minus `CAN 5Y Bond Yield` (from BoC).
 - **Inversion:** Any negative spread value. On dashboard charts, these must be visually distinct (e.g., **Red** line segments or points).
 
 ## 5. Coding & Governance Standards
-- **STRICT CONSTRAINT:** **Pull Requests (PR):** All code changes must be submitted via PR. Use feature branches (e.g., `feat/`, `fix/`).  When asked to update a PR ensure comments capture the changes made with each modification, not just the initial change.gemini
+- **STRICT CONSTRAINT:** **Pull Requests (PR):** All code changes must be submitted via PR. Use feature branches (e.g., `feat/`, `fix/`). When asked to update a PR ensure comments capture the changes made with each modification, not just the initial change.
 - **Housekeeping:** After a successful merge, the feature branch must be deleted to maintain repository hygiene.
 - **Validation:** Scripts must include "Sanity Checks" to validate API responses (e.g., flag rates > 15% or < 1% as anomalies).
 - **Transparency:** The dashboard footer must include a "Last Updated" timestamp in Mountain Time.
