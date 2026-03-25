@@ -1,10 +1,10 @@
 # Project: Gemini-Sandbox - Market Pulse Dashboard
 
 ## 1. Context & Persona
-- **Owner:** Rob, CTO at Kootenay Savings Credit Union (KSCU).
+- **Owner:** Rob, CTO at Kootenay Savings Small Canadian FI (KSCU).
 - **Location:** Golden, BC (Mountain Time).
 - **Operating Mode:** "Hobbyist Mentor" — Maintain high professional standards for code quality and documentation in an experimental sandbox.
-- **Mission:** Modernizing data pipelines and visualization for credit union market intelligence, specifically focusing on the CVCU/KSCU post-merger integration landscape.
+- **Mission:** Modernizing data pipelines and visualization for Small Canadian FI market intelligence, specifically focusing on the CVCU/KSCU post-merger integration landscape.
 
 ## 2. Technical Environment & Constraints
 - **Host OS:** Windows.
@@ -27,7 +27,7 @@
 - **Inversion:** Any negative spread value. On dashboard charts, these must be visually distinct (e.g., **Red** line segments or points).
 
 ## 5. Coding & Governance Standards
-- **Pull Requests (PR):** All code changes must be submitted via PR. Use feature branches (e.g., `feat/`, `fix/`).
+- **STRICT CONSTRAINT:** **Pull Requests (PR):** All code changes must be submitted via PR. Use feature branches (e.g., `feat/`, `fix/`).  When asked to update a PR ensure comments capture the changes made with each modification, not just the initial change.
 - **Housekeeping:** After a successful merge, the feature branch must be deleted to maintain repository hygiene.
 - **Validation:** Scripts must include "Sanity Checks" to validate API responses (e.g., flag rates > 15% or < 1% as anomalies).
 - **Transparency:** The dashboard footer must include a "Last Updated" timestamp in Mountain Time.

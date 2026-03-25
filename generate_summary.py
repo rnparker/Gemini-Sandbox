@@ -46,7 +46,7 @@ def generate_summary():
     current_date = datetime.now().strftime("%B %d, %Y")
 
     prompt = f"""
-You are a senior market analyst for a Canadian Credit Union. 
+You are a senior market analyst for a Small Canadian FI. 
 Today's date is {current_date}.
 
 Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) from the last 30 days:
