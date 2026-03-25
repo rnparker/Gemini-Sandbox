@@ -82,9 +82,9 @@ Output the summary in plain text.
 
     try:
         genai.configure(api_key=API_KEY)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-3-flash")
         
-        print("📡 Generating AI summary from Gemini...")
+        print("📡 Generating AI summary from Gemini 3 Flash...")
         response = model.generate_content(prompt)
         summary_text = response.text.strip()
         

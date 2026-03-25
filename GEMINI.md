@@ -11,6 +11,7 @@
 - **Shell:** PowerShell 5.1 (Native). **STRICT CONSTRAINT:** Never use Bash syntax (no `&&`, `||`, or `export`). Use `;` for sequencing and `$env:VAR` for environment variables.
 - **Language:** Python 3.10+.
 - **CI/CD:** GitHub Actions (scheduled for 8:00 AM MT / 14:00 UTC).
+- **Github Actions:** Powershell syntax requirement does not apply to github actions.
 - **Hosting:** GitHub Pages serving from the `/docs` directory.
 
 ## 3. Data Architecture
