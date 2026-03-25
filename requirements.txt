@@ -1,3 +1,5 @@
 requests
 pytest
 requests-mock
+google-genai
+tzdata

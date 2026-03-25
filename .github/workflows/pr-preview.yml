@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/index.html'
       - 'pulse_check.py'
+      - 'generate_summary.py'
       - '.github/workflows/pr-preview.yml'
 
 permissions:
@@ -25,10 +26,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Install Dependencies
-        run: pip install requests
+        run: pip install requests google-genai
 
       - name: Create Preview Directory
         run: |
@@ -37,12 +38,20 @@ jobs:
           # Copy existing index and data to seed the preview
           cp docs/index.html "$PREVIEW_DIR/"
           cp docs/historical_spread.csv "$PREVIEW_DIR/"
+          # Copy summary.json if it exists to seed the preview
+          if [ -f docs/summary.json ]; then cp docs/summary.json "$PREVIEW_DIR/"; fi
           echo "PREVIEW_DIR=$PREVIEW_DIR" >> $GITHUB_ENV
 
       - name: Run Spread Scraper for Preview
         env:
           SPREAD_CSV_PATH: "docs/previews/pr-${{ github.event.number }}/historical_spread.csv"
         run: python pulse_check.py
+
+      - name: Generate AI Summary for Preview
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SPREAD_CSV_PATH: "docs/previews/pr-${{ github.event.number }}/historical_spread.csv"
+        run: python generate_summary.py
 
       - name: Commit and Push Preview to Main
         run: |

@@ -11,6 +11,7 @@
 - **Shell:** PowerShell 5.1 (Native). **STRICT CONSTRAINT:** Never use Bash syntax (no `&&`, `||`, or `export`). Use `;` for sequencing and `$env:VAR` for environment variables.
 - **Language:** Python 3.10+.
 - **CI/CD:** GitHub Actions (scheduled for 8:00 AM MT / 14:00 UTC).
+- **Github Actions:** Powershell syntax requirement does not apply to github actions.
 - **Hosting:** GitHub Pages serving from the `/docs` directory.
 
 ## 3. Data Architecture
@@ -26,7 +27,7 @@
 - **Inversion:** Any negative spread value. On dashboard charts, these must be visually distinct (e.g., **Red** line segments or points).
 
 ## 5. Coding & Governance Standards
-- **Pull Requests (PR):** All code changes must be submitted via PR. Use feature branches (e.g., `feat/`, `fix/`).
+- **STRICT CONSTRAINT:** **Pull Requests (PR):** All code changes must be submitted via PR. Use feature branches (e.g., `feat/`, `fix/`).  When asked to update a PR ensure comments capture the changes made with each modification, not just the initial change.
 - **Housekeeping:** After a successful merge, the feature branch must be deleted to maintain repository hygiene.
 - **Validation:** Scripts must include "Sanity Checks" to validate API responses (e.g., flag rates > 15% or < 1% as anomalies).
 - **Transparency:** The dashboard footer must include a "Last Updated" timestamp in Mountain Time.
