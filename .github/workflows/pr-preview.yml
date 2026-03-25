@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/index.html'
       - 'pulse_check.py'
+      - 'generate_summary.py'
       - '.github/workflows/pr-preview.yml'
 
 permissions:
