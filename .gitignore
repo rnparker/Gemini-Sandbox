@@ -153,3 +153,4 @@ cython_debug/
 # Gemini CLI
 .gemini/
 gha-creds-*.json
+GEMINI.md
