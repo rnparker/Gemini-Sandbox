@@ -2,7 +2,7 @@ name: Daily Market Pulse & Update
 on:
   schedule:
     # Runs at 16:00 UTC every weekday (Monday-Friday)
-    - cron: '0 14 * * 1-5'
+    - cron: '0 13 * * 1-5'
   workflow_dispatch: # Allows manual triggers
 
 permissions:
