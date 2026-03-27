@@ -45,7 +45,8 @@ def generate_summary():
 
     now_mt = get_mountain_time()
     
-    # 1. Check Cache (2 hours)
+    # 1. Check Cache (2 hours) and Load History
+    history = []
     previous_summary = ""
     if os.path.exists(SUMMARY_FILE):
         try:
@@ -53,7 +54,12 @@ def generate_summary():
                 prev_data = json.load(f)
                 previous_summary = prev_data.get('summary', '')
                 last_upd_str = prev_data.get('last_updated', '')
+                history = prev_data.get('history', [])
                 
+                # Migration: if no history but we have a summary, start history
+                if not history and previous_summary and last_upd_str:
+                    history = [{"date": last_upd_str, "summary": previous_summary}]
+
                 if last_upd_str:
                     last_upd = datetime.strptime(last_upd_str, "%Y-%m-%d %H:%M:%S")
                     # If naive (no TZ), assume it was saved in MT
@@ -64,7 +70,7 @@ def generate_summary():
                         print(f"✨ Summary is less than 2 hours old ({last_upd_str} MT). Skipping API call.")
                         return
         except Exception as e:
-            print(f"⚠️ Warning: Could not read previous summary for cache check: {e}")
+            print(f"⚠️ Warning: Could not read previous summary for cache and history: {e}")
 
     data = get_latest_data(CSV_FILE)
     if not data:
@@ -79,8 +85,19 @@ def generate_summary():
 
     current_date_str = now_mt.strftime("%B %d, %Y")
     
-    # 2. Integrate Previous Summary into Prompt for continuity
-    prev_context = f"\n\nPrevious Analysis Context (to ensure continuity and avoid repetition):\n{previous_summary}" if previous_summary else ""
+    # 2. Integrate Previous Summaries into Prompt for continuity
+    # We provide the last 10 summaries from history
+    history_context = ""
+    if history:
+        history_items = []
+        # Sort history by date descending (newest first) and take top 10
+        sorted_history = sorted(history, key=lambda x: x['date'], reverse=True)[:10]
+        for item in sorted_history:
+            history_items.append(f"--- Summary from {item['date']} ---\n{item['summary']}")
+        
+        history_context = "\n\n### PREVIOUS ANALYSIS HISTORY (Context to ensure continuity) ###\n"
+        history_context += "\n\n".join(history_items)
+        history_context += "\n\n### END OF HISTORY ###"
 
     prompt = f"""
 You are a senior market analyst for a Small Canadian FI. 
@@ -89,7 +106,8 @@ Today's date is {current_date_str}.
 Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) and institutional mortgage data from the last 30 days:
 
 {data_summary}
-{prev_context}
+
+{history_context}
 
 Your task is to provide a revised and improved concise summary (2-3 paragraphs) for a dashboard.
 
@@ -103,7 +121,10 @@ Requirements:
    - Setting deposit rates (how the 2Y yield impacts GICs).
    - Lending margins and institutional profitability.
 6. Highlight the impact of the US-Canada bond market link.
-7. Use the 'Previous Analysis Context' to maintain continuity in your narrative, but provide a fresh update based on {current_date_str} events.
+7. **CONTINUITY & CONTEXT:** Use the provided 'PREVIOUS ANALYSIS HISTORY' to maintain a narrative arc. 
+   - DO NOT treat recurring events (e.g., ongoing geopolitical tension or already reported CPI data) as "net new" information if they appear in the history.
+   - Instead, treat them as "continuing the story" or provide an update on how the situation has evolved since the last report.
+   - Avoid repeating the same general observations from previous days unless there is a significant change in the data or market sentiment.
 8. Keep the tone professional, insightful, and concise. 
 
 Output the summary in plain text.
@@ -123,16 +144,28 @@ Output the summary in plain text.
         )
         summary_text = response.text.strip()
         
-        # Save to JSON with MT timestamp
+        # 3. Update History and Save
+        new_entry = {
+            "date": now_mt.strftime("%Y-%m-%d %H:%M:%S"),
+            "summary": summary_text
+        }
+        
+        # Append to history and keep last 10
+        history.append(new_entry)
+        # Sort by date to be sure, then keep last 10
+        history = sorted(history, key=lambda x: x['date'], reverse=True)[:10]
+
         output = {
             "summary": summary_text,
-            "last_updated": now_mt.strftime("%Y-%m-%d %H:%M:%S")
+            "last_updated": new_entry["date"],
+            "history": history
         }
         
         with open(SUMMARY_FILE, "w", encoding='utf-8') as f:
             json.dump(output, f, indent=4)
         
         print(f"✅ Summary generated and saved to {SUMMARY_FILE} at {output['last_updated']} MT")
+        print(f"📊 History now contains {len(history)} entries.")
         
     except Exception as e:
         print(f"❌ Error generating summary: {e}")
