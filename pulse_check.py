@@ -95,7 +95,8 @@ def update_dashboard_data():
 
         # 2. Check if we already have complete data for the latest observation date
         # This acts as a rate-limiting mechanism for the Ratehub API.
-        latest_date = observations[-1]['d']
+        # BoC API may return observations in descending order. Use max() for safety.
+        latest_date = max(obs['d'] for obs in observations)
         all_rows = get_all_rows(CSV_FILE)
         existing_data = {row['date']: row for row in all_rows}
         
@@ -104,7 +105,7 @@ def update_dashboard_data():
         
         # If the latest date exists and already has mortgage data, skip Ratehub API call
         if latest_row and latest_row.get('mortgage_5y') is not None:
-            print(f"✨ Data for {latest_date} is already complete in CSV. Skipping Ratehub API call.")
+            print(f"✨ Latest observation date {latest_date} already has mortgage data in CSV. Skipping Ratehub API call.")
             best_mortgage = latest_row['mortgage_5y']
         else:
             # Fetch latest mortgage rate only if needed
