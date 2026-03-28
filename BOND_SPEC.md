@@ -27,7 +27,14 @@ To calculate the yield spread for the dashboard:
 
 ---
 
-## 3. Sample Response Data (Reference)
+## 3. Validation Logic (Sanity Checks)
+To ensure data integrity, the following bounds are applied:
+- **Bond Yields:** Flag if `abs(yield) > 15.0`.
+- **Data Completeness:** Observations are only added if both 2Y and 5Y yields are present.
+
+---
+
+## 4. Sample Response Data (Reference)
 ```json
 {
     "observations": [
