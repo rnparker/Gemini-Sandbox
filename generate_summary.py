@@ -100,7 +100,7 @@ def generate_summary():
         history_context += "\n\n### END OF HISTORY ###"
 
     prompt = f"""
-You are a senior market analyst for a Small Canadian FI. 
+You are a senior market analyst providing generic commentary for a Small Canadian Financial Institution (FI). 
 Today's date is {current_date_str}.
 
 Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) and institutional mortgage data from the last 30 days:
@@ -111,12 +111,18 @@ Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) and institu
 
 Your task is to provide a revised and improved concise summary (2-3 paragraphs) for a dashboard.
 
+### MANDATORY GUIDELINES ###
+- **STRICTLY NO FIRST-PERSON PRONOUNS:** Do not use "we", "our", "us", or "I".
+- **GENERIC COMMENTARY ONLY:** Do NOT refer to the dashboard's owner or host as "our institution" or "our rates". 
+- **NO RATE OWNERSHIP:** The mortgage rates provided are from other institutions in the market, NOT the institution this summary is for. Do not imply ownership of these rates.
+- **DO NOT USE PHRASES LIKE:** "For our institution", "While our best 5-year fixed mortgage...", "our lending margin". Use instead: "For a typical small FI", "The market's best 5-year fixed mortgage...", "The lending margin".
+
 Requirements:
 1. Research and incorporate the LATEST major market happenings for Canadian and US bond markets as of {current_date_str}.
 2. Explicitly correlate the data with these happenings (e.g., specific central bank speeches, policy changes, geopolitical events, key economic data like CPI/Jobs, and US Treasury volatility).
 3. Explain the current trend in the 2-year and 5-year yields and the resulting spread.
 4. Integrate the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' into your analysis. How are these responding to the underlying bond moves?
-5. Explain what this means for a Canadian Financial Institution (FI) specifically regarding:
+5. Explain what this means for a small Canadian Financial Institution (FI) generically regarding:
    - Setting mortgage rates (how the 5Y yield impacts fixed rates).
    - Setting deposit rates (how the 2Y yield impacts GICs).
    - Lending margins and institutional profitability.
