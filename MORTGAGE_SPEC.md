@@ -25,7 +25,13 @@ To find the representative market rate for the dashboard:
 
 ---
 
-## 3. Sample Response Data (Reference)
+## 3. Validation Logic (Sanity Checks)
+To ensure data integrity, the following bounds are applied:
+- **Mortgage Rates:** Flag if `rate < 1.0` or `rate > 15.0` as anomalies.
+
+---
+
+## 4. Sample Response Data (Reference)
 ```json
 {
     "data": {
