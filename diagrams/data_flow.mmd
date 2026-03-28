@@ -1,25 +1,26 @@
 graph TD
-    subgraph Backend
-    A[GitHub Actions Trigger] --> B(Pulse Check Python Script)
-    B --> C[Read All Existing CSV Data]
-    C --> D[Fetch Latest BoC API Data]
-    D --> E{Extract New Observations}
-    E --> F[Merge Existing & New Data]
-    F --> G[Sort All Data by Date - Ascending]
-    G --> H[Rewrite CSV File]
-    H --> I[AI Summary Script]
-    I --> J[Generate summary.json via Gemini]
-    J --> K[Commit & Push Changes]
+    subgraph Backend ["Backend: Pulse Check & AI Analysis"]
+    A[GitHub Actions Trigger] --> B(Pulse Check: pulse_check.py)
+    B --> C[Read existing docs/historical_spread.csv]
+    C --> D[Fetch latest BoC Bond Yields]
+    D --> E{New Data Found?}
+    E -- No --> F[Skip Ratehub API]
+    E -- Yes --> G[Fetch latest Mortgage Rates from Ratehub]
+    G --> H[Calculate Yield Spread & Lending Margin]
+    F --> I[AI Analysis: generate_summary.py]
+    H --> I
+    I --> J[Check docs/summary.json Cache - 2h]
+    J --> K[Invoke Gemini Model with Search Grounding]
+    K --> L[Update docs/summary.json and History]
+    L --> M[Commit & Push updated Data/Summary]
     end
 
-    subgraph Frontend
-    L[User Opens index.html] --> M[PapaParse Reads CSV]
-    M --> N[Filter Valid Rows]
-    N --> O[Extract Last Entry Date]
-    O --> P[Update last-updated Span]
-    M --> Q[Fetch summary.json]
-    Q --> R[Display AI Analysis Card]
-    N --> S[Render Charts]
+    subgraph Frontend ["Frontend: Market Pulse Dashboard"]
+    N[User Opens docs/index.html] --> O[PapaParse reads historical_spread.csv]
+    O --> P[Filter valid rows & Handle Inversions - Red]
+    P --> Q[Update Charts & Last-Updated MT Timestamp]
+    O --> R[Fetch & Display summary.json Analysis]
     end
 
-    K -.-> M
+    M -.-> N
+
