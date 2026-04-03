@@ -100,7 +100,56 @@
             color: var(--accent-spread);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
+        }
+
+        .commentary-date {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            border-bottom: 1px solid #474d57;
+            padding-bottom: 10px;
+        }
+
+        .commentary-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #474d57;
+        }
+
+        .commentary-nav-btn {
+            background-color: #2b3139;
+            border: 1px solid #474d57;
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .commentary-nav-btn:hover:not(:disabled) {
+            background-color: #474d57;
+            border-color: var(--button-active);
+        }
+
+        .commentary-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .commentary-counter {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: monospace;
         }
 
         .summary-card p {
@@ -108,6 +157,14 @@
             color: var(--text-primary);
             font-size: 0.95rem;
             white-space: pre-line;
+            margin-bottom: 0;
+        }
+
+        .summary-footer {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .disclaimer {
@@ -157,14 +214,28 @@
         <canvas id="yieldChart"></canvas>
     </div>
 
-    <div class="summary-card" id="ai-summary-container" style="display: none;">
-        <h2>🤖 AI Market Analysis</h2>
-        <p id="ai-summary-text">Generating insights...</p>
-        <small style="color: var(--text-secondary); font-size: 0.75rem;">Analysis powered by Gemini 3 Flash (Preview) with Google Search Grounding | Last Updated: <span id="summary-timestamp">...</span></small>
-    </div>
-
     <div class="chart-card">
         <canvas id="spreadChart"></canvas>
+    </div>
+
+    <div class="summary-card" id="ai-summary-container" style="display: none;">
+        <h2>🤖 AI Market Analysis</h2>
+        <div id="commentary-date" class="commentary-date">...</div>
+        <p id="ai-summary-text">Generating insights...</p>
+        
+        <div class="summary-footer">
+            <small style="color: var(--text-secondary); font-size: 0.75rem;">Analysis powered by Gemini 3 Flash (Preview) with Google Search Grounding | Last Updated: <span id="summary-timestamp">...</span></small>
+        </div>
+
+        <div class="commentary-controls">
+            <button id="prev-commentary" class="commentary-nav-btn" onclick="changeCommentary(1)">
+                <span>←</span> Older
+            </button>
+            <span id="commentary-counter" class="commentary-counter">1 / 1</span>
+            <button id="next-commentary" class="commentary-nav-btn" onclick="changeCommentary(-1)">
+                Newer <span>→</span>
+            </button>
+        </div>
     </div>
 
     <!-- Data Disclaimer -->
@@ -184,10 +255,36 @@
 <script>
     let rawData = [];
     let yieldChart, spreadChart, marginChart;
+    let commentaryHistory = [];
+    let currentCommentaryIndex = 0;
 
     // Global configuration for Chart.js
     Chart.defaults.color = '#848e9c';
     Chart.defaults.borderColor = '#2b3139';
+
+    function updateCommentaryUI(index) {
+        if (!commentaryHistory || commentaryHistory.length === 0) return;
+        
+        const item = commentaryHistory[index];
+        document.getElementById('ai-summary-text').textContent = item.summary;
+        document.getElementById('summary-timestamp').textContent = item.date;
+        document.getElementById('commentary-date').textContent = item.date.split(' ')[0]; // Show date only prominently
+        
+        // Update counter
+        document.getElementById('commentary-counter').textContent = `${index + 1} / ${commentaryHistory.length}`;
+        
+        // Update buttons
+        document.getElementById('prev-commentary').disabled = (index === commentaryHistory.length - 1);
+        document.getElementById('next-commentary').disabled = (index === 0);
+    }
+
+    function changeCommentary(delta) {
+        const newIndex = currentCommentaryIndex + delta;
+        if (newIndex >= 0 && newIndex < commentaryHistory.length) {
+            currentCommentaryIndex = newIndex;
+            updateCommentaryUI(currentCommentaryIndex);
+        }
+    }
 
     /**
      * Initial Data Load
@@ -216,8 +313,17 @@
                         return response.json();
                     })
                     .then(data => {
-                        document.getElementById('ai-summary-text').textContent = data.summary;
-                        document.getElementById('summary-timestamp').textContent = data.last_updated;
+                        commentaryHistory = data.history || [];
+                        // Fallback if history is empty but summary exists
+                        if (commentaryHistory.length === 0 && data.summary) {
+                            commentaryHistory = [{
+                                date: data.last_updated,
+                                summary: data.summary
+                            }];
+                        }
+                        
+                        currentCommentaryIndex = 0; // Most recent
+                        updateCommentaryUI(currentCommentaryIndex);
                         document.getElementById('ai-summary-container').style.display = 'block';
                     })
                     .catch(err => {
