@@ -26,21 +26,17 @@ jobs:
       - name: Run Tests
         run: python -m pytest tests/
 
-      - name: Run Spread Scraper
-        # This script now reads the CSV, fetches recent BoC data, 
-        # and appends only new, unique entries.
-        run: python pulse_check.py 
-
-      - name: Generate AI Summary
+      - name: Run Market Pulse Analysis
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python generate_summary.py
+        run: python main.py
 
       - name: Commit and Push Data
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add docs/historical_spread.csv docs/summary.json
+
           # Only commit if there are actual changes to the files
           git commit -m "data: update historical spread and AI summary [skip ci]" || echo "No changes to commit"
           git push
