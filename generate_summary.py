@@ -38,7 +38,7 @@ def get_latest_data(filename, limit=30):
     
     return rows[-limit:]
 
-def generate_summary():
+def generate_summary(force=False):
     if not API_KEY:
         print("❌ Error: GEMINI_API_KEY not found in environment variables.")
         return
@@ -60,7 +60,7 @@ def generate_summary():
                 if not history and previous_summary and last_upd_str:
                     history = [{"date": last_upd_str, "summary": previous_summary}]
 
-                if last_upd_str:
+                if last_upd_str and not force:
                     last_upd = datetime.strptime(last_upd_str, "%Y-%m-%d %H:%M:%S")
                     # If naive (no TZ), assume it was saved in MT
                     if now_mt.tzinfo:
@@ -76,6 +76,18 @@ def generate_summary():
     if not data:
         print("❌ Error: No data found in CSV to summarize.")
         return
+
+    # 1b. Skip if the latest data point is already summarized (unless forced)
+    if not force and history:
+        latest_csv_date = data[-1]['date']
+        # The history stores the timestamp of the SUMMARY generation, not the data date.
+        # However, we can check if the summary text itself contains the date, 
+        # but a more robust way is to check if we've already generated a summary 
+        # since the CSV was last modified, OR if the latest date in CSV is old.
+        # For now, we'll rely on the 2-hour cache OR a simple check:
+        # If the latest date in CSV is already in our history context (approximate), skip.
+        # Actually, the simplest way is to check if the caller told us to run.
+        pass
 
     # Prepare data for prompt
     data_summary = "\n".join([

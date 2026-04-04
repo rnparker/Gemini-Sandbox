@@ -77,6 +77,7 @@ def get_all_rows(filename):
 def update_dashboard_data():
     """
     Fetches BoC and Ratehub data, calculates spread and margin, and updates CSV.
+    Returns True if new data was added or existing data updated, False otherwise.
     """
     # 1. Fetch Latest BoC Bond Yields to determine the most recent observation date
     boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}/json?recent=10"
@@ -91,7 +92,7 @@ def update_dashboard_data():
         
         if not observations:
             print("No BoC observations found.")
-            return
+            return False
 
         # 2. Check if we already have complete data for the latest observation date
         # This acts as a rate-limiting mechanism for the Ratehub API.
@@ -111,7 +112,7 @@ def update_dashboard_data():
             # Fetch latest mortgage rate only if needed
             best_mortgage = get_best_5y_fixed()
 
-        new_data_found = False
+        data_changed = False
 
         # 3. Process observations
         for obs in observations:
@@ -146,11 +147,19 @@ def update_dashboard_data():
                 if date in existing_data:
                     # Only update if current data is incomplete or changed
                     current = existing_data[date]
-                    if current.get('mortgage_5y') is None or current.get('yield_5y') != y5:
+                    needs_update = False
+                    if current.get('mortgage_5y') is None and best_mortgage is not None:
+                        needs_update = True
+                    elif current.get('yield_5y') != y5:
+                        needs_update = True
+                    
+                    if needs_update:
                         existing_data[date].update({k: v for k, v in row_data.items() if v is not None})
+                        data_changed = True
+                        print(f"✅ Updated existing data for {date}")
                 else:
                     existing_data[date] = row_data
-                    new_data_found = True
+                    data_changed = True
                     print(f"✅ Prepared new data for {date}: Spread = {spread}%")
         
         # 4. Prepare sorted output
@@ -168,9 +177,11 @@ def update_dashboard_data():
                 writer.writerow(row)
         
         print(f"📁 Dashboard data updated and sorted: {CSV_FILE}")
+        return data_changed
             
     except Exception as e:
         print(f"❌ Error updating dashboard data: {e}")
+        return False
 
 if __name__ == "__main__":
     update_dashboard_data()
