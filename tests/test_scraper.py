@@ -2,7 +2,7 @@ import pytest
 import requests_mock
 import os
 import csv
-from pulse_check import get_best_5y_fixed, update_dashboard_data, SERIES_2Y, SERIES_5Y, RATEHUB_URL
+from pulse_check import get_best_5y_fixed, update_dashboard_data, SERIES_2Y, SERIES_5Y, SERIES_CORRA, RATEHUB_URL
 
 def test_get_best_5y_fixed_success():
     """
@@ -132,23 +132,24 @@ def test_update_dashboard_data_rate_limit(tmp_path):
     
     # Pre-populate CSV with "complete" data for the latest date
     with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['date', 'yield_2y', 'yield_5y', 'spread', 'mortgage_5y', 'lending_margin'])
+        writer = csv.DictWriter(f, fieldnames=['date', 'yield_2y', 'yield_5y', 'repo_rate', 'spread', 'mortgage_5y', 'lending_margin'])
         writer.writeheader()
         writer.writerow({
             'date': '2026-03-25',
             'yield_2y': 2.5,
             'yield_5y': 3.0,
+            'repo_rate': 4.5,
             'spread': 0.5,
             'mortgage_5y': 4.0,
             'lending_margin': 1.0
         })
 
     # Mock BoC API to return observations (descending order)
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}/json?recent=10"
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?recent=10"
     mock_boc_data = {
         "observations": [
-            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}},
-            {"d": "2026-03-24", SERIES_2Y: {"v": "2.4"}, SERIES_5Y: {"v": "2.9"}}
+            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}, SERIES_CORRA: {"v": "4.0"}},
+            {"d": "2026-03-24", SERIES_2Y: {"v": "2.4"}, SERIES_5Y: {"v": "2.9"}, SERIES_CORRA: {"v": "4.0"}}
         ]
     }
 
@@ -164,6 +165,7 @@ def test_update_dashboard_data_rate_limit(tmp_path):
             assert len(rows) == 2
             assert rows[1]['date'] == '2026-03-25'
             assert rows[1]['mortgage_5y'] == '4.0'
+            assert rows[1]['repo_rate'] == '4.5'
 
 def test_update_dashboard_data_no_rate_limit(tmp_path):
     """
@@ -174,21 +176,22 @@ def test_update_dashboard_data_no_rate_limit(tmp_path):
     pulse_check.CSV_FILE = str(csv_file)
     
     with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['date', 'yield_2y', 'yield_5y', 'spread', 'mortgage_5y', 'lending_margin'])
+        writer = csv.DictWriter(f, fieldnames=['date', 'yield_2y', 'yield_5y', 'repo_rate', 'spread', 'mortgage_5y', 'lending_margin'])
         writer.writeheader()
         writer.writerow({
             'date': '2026-03-25',
             'yield_2y': 2.5,
             'yield_5y': 3.0,
+            'repo_rate': 4.5,
             'spread': 0.5,
             'mortgage_5y': '', # Missing
             'lending_margin': ''
         })
 
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}/json?recent=10"
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?recent=10"
     mock_boc_data = {
         "observations": [
-            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}}
+            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}, SERIES_CORRA: {"v": "4.0"}}
         ]
     }
     
@@ -212,3 +215,5 @@ def test_update_dashboard_data_no_rate_limit(tmp_path):
             reader = csv.DictReader(f)
             rows = list(reader)
             assert rows[0]['mortgage_5y'] == '3.99'
+            assert rows[0]['repo_rate'] == '4.5'
+

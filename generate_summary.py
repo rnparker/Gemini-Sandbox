@@ -91,7 +91,7 @@ def generate_summary(force=False):
 
     # Prepare data for prompt
     data_summary = "\n".join([
-        f"Date: {r['date']}, 2Y: {r['yield_2y']}%, 5Y: {r['yield_5y']}%, Spread: {r['spread']}%, Best 5Y Fixed: {r.get('mortgage_5y', 'N/A')}%, Margin: {r.get('lending_margin', 'N/A')}%"
+        f"Date: {r['date']}, 2Y: {r['yield_2y']}%, 5Y: {r['yield_5y']}%, Repo Rate (CORRA+50bps): {r.get('repo_rate', 'N/A')}%, Spread: {r['spread']}%, Best 5Y Fixed: {r.get('mortgage_5y', 'N/A')}%, Margin: {r.get('lending_margin', 'N/A')}%"
         for r in data
     ])
 
@@ -115,7 +115,7 @@ def generate_summary(force=False):
 You are a senior market analyst providing generic commentary for a Small Canadian Financial Institution (FI). 
 Today's date is {current_date_str}.
 
-Analyze the following Canadian Government Bond Yield data (2Y vs 5Y) and institutional mortgage data from the last 30 days:
+Analyze the following Canadian Government Bond Yield data (2Y vs 5Y), the Reference Repo Rate (CORRA + 50 bps), and institutional mortgage data from the last 30 days:
 
 {data_summary}
 
@@ -133,17 +133,19 @@ Requirements:
 1. Research and incorporate the LATEST major market happenings for Canadian and US bond markets as of {current_date_str}.
 2. Explicitly correlate the data with these happenings (e.g., specific central bank speeches, policy changes, geopolitical events, key economic data like CPI/Jobs, and US Treasury volatility).
 3. Explain the current trend in the 2-year and 5-year yields and the resulting spread.
-4. Integrate the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' into your analysis. How are these responding to the underlying bond moves?
-5. Explain what this means for a small Canadian Financial Institution (FI) generically regarding:
+4. **REPO RATE ANALYSIS:** Discuss the Reference Repo Rate (CORRA + 50 bps). How does it relate to the 2-year and 5-year bond yields? What does its current level suggest about overnight funding costs and liquidity compared to longer-term bond yields?
+5. Integrate the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' into your analysis. How are these responding to the underlying bond moves?
+6. Explain what this means for a small Canadian Financial Institution (FI) generically regarding:
    - Setting mortgage rates (how the 5Y yield impacts fixed rates).
    - Setting deposit rates (how the 2Y yield impacts GICs).
+   - Funding costs (using the Repo Rate as a proxy for institutional borrowing costs).
    - Lending margins and institutional profitability.
-6. Highlight the impact of the US-Canada bond market link.
-7. **CONTINUITY & CONTEXT:** Use the provided 'PREVIOUS ANALYSIS HISTORY' to maintain a narrative arc. 
+7. Highlight the impact of the US-Canada bond market link.
+8. **CONTINUITY & CONTEXT:** Use the provided 'PREVIOUS ANALYSIS HISTORY' to maintain a narrative arc. 
    - DO NOT treat recurring events (e.g., ongoing geopolitical tension or already reported CPI data) as "net new" information if they appear in the history.
    - Instead, treat them as "continuing the story" or provide an update on how the situation has evolved since the last report.
    - Avoid repeating the same general observations from previous days unless there is a significant change in the data or market sentiment.
-8. Keep the tone professional, insightful, and concise. 
+9. Keep the tone professional, insightful, and concise. 
 
 Output the summary in plain text.
 """

@@ -23,10 +23,11 @@ The generation logic utilizes the following context:
 The generated commentary must cover:
 1. **Market Happenings:** Latest major events in Canadian and US bond markets (e.g., central bank policy, economic indicators, geopolitical events).
 2. **Yield Trend Analysis:** Correlate current 2Y and 5Y yields and the resulting spread with market events.
-3. **Mortgage & Margin Impact:** Analysis of how the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' are responding to bond moves.
-4. **FI Operational Impact:** Generic explanation of impacts on mortgage rate setting, deposit rate setting, and institutional profitability.
-5. **US-Canada Link:** Highlight the correlation between the US and Canadian bond markets.
-6. **Narrative Arc:** Use history to treat recurring events as "continuing the story" rather than new information.
+3. **Repo Rate Analysis:** Analysis of the Reference Repo Rate (CORRA + 50 bps) and its relationship to bond yields and liquidity.
+4. **Mortgage & Margin Impact:** Analysis of how the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' are responding to bond moves.
+5. **FI Operational Impact:** Generic explanation of impacts on mortgage rate setting, deposit rate setting, institutional borrowing costs (using Repo Rate as proxy), and institutional profitability.
+6. **US-Canada Link:** Highlight the correlation between the US and Canadian bond markets.
+7. **Narrative Arc:** Use history to treat recurring events as "continuing the story" rather than new information.
 
 ## 6. Storage Schema (`docs/summary.json`)
 The summary and its history are stored in a JSON file with the following structure:

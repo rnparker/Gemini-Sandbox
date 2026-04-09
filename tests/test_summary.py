@@ -15,8 +15,8 @@ class TestSummaryGeneration(unittest.TestCase):
         
         # Create a dummy CSV
         with open(self.csv_file, "w", encoding="utf-8") as f:
-            f.write("date,yield_2y,yield_5y,spread,mortgage_5y,lending_margin\n")
-            f.write("2026-03-26,2.99,3.20,0.21,3.94,0.74\n")
+            f.write("date,yield_2y,yield_5y,repo_rate,spread,mortgage_5y,lending_margin\n")
+            f.write("2026-03-26,2.99,3.20,3.50,0.21,3.94,0.74\n")
 
     def tearDown(self):
         if os.path.exists(self.summary_file):
