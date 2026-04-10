@@ -16,6 +16,7 @@
             --text-secondary: #848e9c;
             --accent-2y: #00ffcc; /* Neon Green */
             --accent-5y: #00ccff; /* Neon Blue */
+            --accent-repo: #ff00ff; /* Magenta for Repo Rate */
             --accent-spread: #ffbd2e; /* Golden Yellow for Spread */
             --accent-margin: #32cd32; /* Lime Green for Lending Margin */
             --accent-mortgage: #ff4500; /* OrangeRed for Mortgage */
@@ -383,6 +384,7 @@
         const fullLabels = filteredData.map(row => row.date);
         const fullY2 = filteredData.map(row => row.yield_2y);
         const fullY5 = filteredData.map(row => row.yield_5y);
+        const fullRepo = filteredData.map(row => row.repo_rate);
         const fullSpread = filteredData.map(row => row.spread);
         const fullMortgage = filteredData.map(row => row.mortgage_5y);
         const fullMargin = filteredData.map(row => row.lending_margin);
@@ -396,15 +398,16 @@
         const labels = fullLabels.slice(displayOffset);
         const y2 = fullY2.slice(displayOffset);
         const y5 = fullY5.slice(displayOffset);
+        const repo = fullRepo.slice(displayOffset);
         const spread = fullSpread.slice(displayOffset);
         const sma7 = fullSMA.slice(displayOffset);
         const mortgage = fullMortgage.slice(displayOffset);
         const margin = fullMargin.slice(displayOffset);
 
-        renderCharts(labels, y2, y5, spread, sma7, mortgage, margin);
+        renderCharts(labels, y2, y5, repo, spread, sma7, mortgage, margin);
     }
 
-    function renderCharts(labels, y2, y5, spread, sma7, mortgage, margin) {
+    function renderCharts(labels, y2, y5, repo, spread, sma7, mortgage, margin) {
         const yieldCtx = document.getElementById('yieldChart').getContext('2d');
         const spreadCtx = document.getElementById('spreadChart').getContext('2d');
         const marginCtx = document.getElementById('marginChart').getContext('2d');
@@ -435,6 +438,15 @@
                         borderWidth: 2,
                         tension: 0.1,
                         pointRadius: 0
+                    },
+                    {
+                        label: 'Ref Repo Rate (CORRA+50bps)',
+                        data: repo,
+                        borderColor: '#ff00ff',
+                        backgroundColor: 'rgba(255, 0, 255, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointRadius: 0
                     }
                 ]
             },
@@ -443,7 +455,7 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'Canadian Yield Comparison (2Y vs 5Y)', color: '#eaecef' },
+                    title: { display: true, text: 'Canadian Yield Comparison (2Y vs 5Y vs Repo)', color: '#eaecef' },
                     legend: { position: 'top' }
                 },
                 scales: {

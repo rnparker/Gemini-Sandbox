@@ -5,10 +5,11 @@ Orchestrate the collection of Bank of Canada (BoC) bond yields and Ratehub mortg
 
 ## 2. Data Sources
 ### 2.1. Bank of Canada (Valet API)
-- **URL:** `https://www.bankofcanada.ca/valet/observations/BD.CDN.2YR.DQ.YLD%2CBD.CDN.5YR.DQ.YLD/json`
+- **URL:** `https://www.bankofcanada.ca/valet/observations/BD.CDN.2YR.DQ.YLD%2CBD.CDN.5YR.DQ.YLD%2CAVG.INTWO/json`
 - **Series IDs:**
   - `BD.CDN.2YR.DQ.YLD`: 2-Year Benchmark Bond Yield
   - `BD.CDN.5YR.DQ.YLD`: 5-Year Benchmark Bond Yield
+  - `AVG.INTWO`: CORRA (Canadian Overnight Repo Rate Average)
 - **Parameters:** `recent=10` (to capture the latest observations).
 
 ### 2.2. Ratehub API
@@ -20,6 +21,7 @@ Orchestrate the collection of Bank of Canada (BoC) bond yields and Ratehub mortg
 
 ## 3. Calculated Metrics
 - **Yield Spread:** `CAN 5Y Yield - CAN 2Y Yield`.
+- **Reference Repo Rate:** `CORRA + 0.50` (50 bps margin).
 - **Lending Margin:** `Best 5Y Fixed Mortgage Rate - CAN 5Y Yield`.
 
 ## 4. Storage Schema (`docs/historical_spread.csv`)
@@ -30,6 +32,7 @@ The data is stored in a CSV file with the following columns:
 | `date` | String | Observation date (YYYY-MM-DD). |
 | `yield_2y` | Float | 2-Year Benchmark Bond Yield (%). |
 | `yield_5y` | Float | 5-Year Benchmark Bond Yield (%). |
+| `repo_rate` | Float | Calculated Reference Repo Rate (%). |
 | `spread` | Float | Calculated Yield Spread (%). |
 | `mortgage_5y` | Float | Best 5-Year Fixed Insured Mortgage Rate (%). |
 | `lending_margin` | Float | Calculated Lending Margin (%). |

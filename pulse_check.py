@@ -6,8 +6,10 @@ from datetime import datetime
 # Bank of Canada Valet API Series IDs:
 # BD.CDN.2YR.DQ.YLD = 2-Year Benchmark Bond Yield
 # BD.CDN.5YR.DQ.YLD = 5-Year Benchmark Bond Yield
+# AVG.INTWO = CORRA (Canadian Overnight Repo Rate Average)
 SERIES_2Y = "BD.CDN.2YR.DQ.YLD"
 SERIES_5Y = "BD.CDN.5YR.DQ.YLD"
+SERIES_CORRA = "AVG.INTWO"
 
 # Ratehub API Configuration
 RATEHUB_URL = "https://api.ratehub.ca/mortgage-rates/all/purchase-rates?amortization=25&downPaymentPercent=0.05&homePrice=400000&isCashBack=0&isOpen=0&isOwnerOccupied=1&isPreApproval=0&language=en&province=BC&term=60&type=fixed"
@@ -65,6 +67,7 @@ def get_all_rows(filename):
                     'date': row['date'],
                     'yield_2y': float(row['yield_2y']) if row.get('yield_2y') else None,
                     'yield_5y': float(row['yield_5y']) if row.get('yield_5y') else None,
+                    'repo_rate': float(row['repo_rate']) if row.get('repo_rate') else None,
                     'spread': float(row['spread']) if row.get('spread') else None,
                     'mortgage_5y': float(row['mortgage_5y']) if row.get('mortgage_5y') else None,
                     'lending_margin': float(row['lending_margin']) if row.get('lending_margin') else None
@@ -80,11 +83,13 @@ def update_dashboard_data():
     Returns True if new data was added or existing data updated, False otherwise.
     """
     # 1. Fetch Latest BoC Bond Yields to determine the most recent observation date
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}/json?recent=10"
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2CSERIES_CORRA/json?recent=10"
+    # Actually, the string representation of SERIES_CORRA should be used in the URL
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?recent=10"
     
     try:
-        # Fetch bond yields
-        print(f"📡 Fetching BoC yields for {SERIES_2Y} and {SERIES_5Y}...")
+        # Fetch bond yields and CORRA
+        print(f"📡 Fetching BoC yields for {SERIES_2Y}, {SERIES_5Y}, and {SERIES_CORRA}...")
         boc_resp = requests.get(boc_url, timeout=15)
         boc_resp.raise_for_status()
         boc_data = boc_resp.json()
@@ -119,6 +124,7 @@ def update_dashboard_data():
             date = obs['d']
             val_2y = obs.get(SERIES_2Y, {}).get('v')
             val_5y = obs.get(SERIES_5Y, {}).get('v')
+            val_corra = obs.get(SERIES_CORRA, {}).get('v')
             
             if val_2y and val_5y:
                 y2 = float(val_2y)
@@ -130,6 +136,11 @@ def update_dashboard_data():
                     print(f"⚠️ Anomaly Detected: Bond yields for {date} outside sanity bounds.")
                     continue
 
+                # Calculate Repo Rate if CORRA is available (CORRA + 50bps)
+                repo_rate = None
+                if val_corra:
+                    repo_rate = round(float(val_corra) + 0.5, 4)
+
                 # Calculate Lending Margin if we have a mortgage rate
                 margin = None
                 if best_mortgage is not None:
@@ -139,6 +150,7 @@ def update_dashboard_data():
                     'date': date,
                     'yield_2y': y2,
                     'yield_5y': y5,
+                    'repo_rate': repo_rate,
                     'spread': spread,
                     'mortgage_5y': best_mortgage,
                     'lending_margin': margin
@@ -151,6 +163,8 @@ def update_dashboard_data():
                     if current.get('mortgage_5y') is None and best_mortgage is not None:
                         needs_update = True
                     elif current.get('yield_5y') != y5:
+                        needs_update = True
+                    elif current.get('repo_rate') is None and repo_rate is not None:
                         needs_update = True
                     
                     if needs_update:
@@ -169,7 +183,7 @@ def update_dashboard_data():
         os.makedirs(os.path.dirname(CSV_FILE), exist_ok=True)
 
         # 5. Write to CSV
-        fieldnames = ['date', 'yield_2y', 'yield_5y', 'spread', 'mortgage_5y', 'lending_margin']
+        fieldnames = ['date', 'yield_2y', 'yield_5y', 'repo_rate', 'spread', 'mortgage_5y', 'lending_margin']
         with open(CSV_FILE, mode='w', newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()

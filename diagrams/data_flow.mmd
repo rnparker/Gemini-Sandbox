@@ -2,11 +2,11 @@ graph TD
     subgraph Backend ["Backend: Pulse Check & AI Analysis"]
     A[GitHub Actions Trigger] --> B(Pulse Check: pulse_check.py)
     B --> C[Read existing docs/historical_spread.csv]
-    C --> D[Fetch latest BoC Bond Yields]
+    C --> D[Fetch latest BoC Bond Yields & CORRA]
     D --> E{New Data Found?}
     E -- No --> F[Skip Ratehub API]
     E -- Yes --> G[Fetch latest Mortgage Rates from Ratehub]
-    G --> H[Calculate Yield Spread & Lending Margin]
+    G --> H[Calculate Yield Spread, Repo Rate & Lending Margin]
     F --> I[AI Analysis: generate_summary.py]
     H --> I
     I --> J[Check docs/summary.json Cache - 2h]
