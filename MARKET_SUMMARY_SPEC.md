@@ -21,7 +21,7 @@ The generation logic utilizes the following context:
 
 ## 5. Summary Content Requirements
 The generated commentary must cover:
-1. **Market Happenings:** Latest major events in Canadian and US bond markets (e.g., central bank policy, economic indicators, geopolitical events).
+1. **Market Happenings:** Latest major events in Canadian and US bond markets (e.g., central bank policy, economic indicators, geopolitical events). Commentary should correlate with the visual annotations (BoC/CPI) provided on the dashboard charts.
 2. **Yield Trend Analysis:** Correlate current 2Y and 5Y yields and the resulting spread with market events.
 3. **Repo Rate Analysis:** Analysis of the Reference Repo Rate (CORRA + 50 bps) and its relationship to bond yields and liquidity.
 4. **Mortgage & Margin Impact:** Analysis of how the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' are responding to bond moves.

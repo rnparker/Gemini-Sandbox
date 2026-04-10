@@ -17,8 +17,10 @@ graph TD
 
     subgraph Frontend ["Frontend: Market Pulse Dashboard"]
     N[User Opens docs/index.html] --> O[PapaParse reads historical_spread.csv]
+    N --> R1[Fetch market_events.json]
     O --> P[Filter valid rows & Handle Inversions - Red]
     P --> Q[Update Charts & Last-Updated MT Timestamp]
+    R1 --> Q
     O --> R[Fetch & Display summary.json Analysis]
     end
 

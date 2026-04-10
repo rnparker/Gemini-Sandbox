@@ -7,6 +7,7 @@
     <!-- Trigger Deployment: 2026-04-09 22:53:26 MT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
         /* FinTech Theme Variables */
         :root {
@@ -261,6 +262,7 @@
     // --- State & Config ---
     let currentRangeDays = 7;
     let rawData = [];
+    let marketEvents = [];
     let yieldChart, spreadChart, marginChart;
     let commentaryHistory = [];
     let currentCommentaryIndex = 0;
@@ -336,6 +338,40 @@
         return sma;
     }
 
+    function getAnnotations(labels) {
+        if (!marketEvents || marketEvents.length === 0) return {};
+        
+        const annotations = {};
+        const style = getComputedStyle(document.documentElement);
+        const bocColor = style.getPropertyValue('--text-muted').trim();
+        const cpiColor = style.getPropertyValue('--accent-mortgage').trim();
+        const textColor = style.getPropertyValue('--text-main').trim();
+
+        marketEvents.forEach((ev, idx) => {
+            if (labels.includes(ev.date)) {
+                const color = ev.type === 'boc' ? bocColor : cpiColor;
+                annotations['event' + idx] = {
+                    type: 'line',
+                    xMin: ev.date,
+                    xMax: ev.date,
+                    borderColor: color,
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    label: {
+                        display: true,
+                        content: ev.label,
+                        position: 'start',
+                        backgroundColor: color,
+                        color: '#fff',
+                        font: { size: 10 },
+                        padding: 2
+                    }
+                };
+            }
+        });
+        return annotations;
+    }
+
     function updateRange(days, btnElement) {
         if (btnElement) {
             document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
@@ -388,6 +424,8 @@
         const cmortgage = style.getPropertyValue('--accent-mortgage').trim();
         const cma = style.getPropertyValue('--accent-ma').trim();
 
+        const annotations = getAnnotations(labels);
+
         if (yieldChart) yieldChart.destroy();
         if (spreadChart) spreadChart.destroy();
         if (marginChart) marginChart.destroy();
@@ -407,7 +445,8 @@
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     title: { display: true, text: 'Canadian Yield Comparison (2Y vs 5Y vs Repo)', color: Chart.defaults.color },
-                    legend: { position: 'top' }
+                    legend: { position: 'top' },
+                    annotation: { annotations: annotations }
                 },
                 scales: { y: { title: { display: true, text: 'Yield (%)' } } }
             }
@@ -425,7 +464,10 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { title: { display: true, text: 'Canadian 5Y - 2Y Spread (Daily & 7D MA)', color: Chart.defaults.color } },
+                plugins: { 
+                    title: { display: true, text: 'Canadian 5Y - 2Y Spread (Daily & 7D MA)', color: Chart.defaults.color },
+                    annotation: { annotations: annotations }
+                },
                 scales: { y: { title: { display: true, text: 'Spread (%)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#ff4d4d' : Chart.defaults.borderColor } } }
             }
         });
@@ -457,6 +499,14 @@
         // Init theme
         const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         setTheme(savedTheme);
+
+        // Fetch Market Events
+        fetch('market_events.json')
+            .then(response => response.ok ? response.json() : Promise.reject('Events not found'))
+            .then(data => {
+                marketEvents = data.events || [];
+            })
+            .catch(err => console.log('Market events skip:', err));
 
         // Load Data
         Papa.parse('historical_spread.csv', {
