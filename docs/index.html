@@ -8,12 +8,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Dark FinTech Theme */
+        /* FinTech Theme Variables */
         :root {
-            --bg-dark: #0b0e11;
-            --card-bg: #1e2329;
-            --text-primary: #eaecef;
-            --text-secondary: #848e9c;
+            --bg-body: #0b0e11;
+            --bg-card: #1e2329;
+            --text-main: #eaecef;
+            --text-muted: #848e9c;
+            --border-color: #2b3139;
             --accent-2y: #00ffcc; /* Neon Green */
             --accent-5y: #00ccff; /* Neon Blue */
             --accent-repo: #ff00ff; /* Magenta for Repo Rate */
@@ -24,15 +25,25 @@
             --button-active: #f0b90b;
         }
 
+        [data-theme="light"] {
+            --bg-body: #f0f2f5;
+            --bg-card: #ffffff;
+            --text-main: #1e2329;
+            --text-muted: #474d57;
+            --border-color: #e6e8ea;
+            --accent-ma: #1e2329;
+        }
+
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
+            background-color: var(--bg-body);
+            color: var(--text-main);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         header {
@@ -43,21 +54,50 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-content {
+            flex: 1;
+            min-width: 300px;
         }
 
         .header-content h1 { margin: 0; font-weight: 600; font-size: 1.5rem; }
-        .header-content p { color: var(--text-secondary); margin-top: 5px; }
+        .header-content p { color: var(--text-muted); margin-top: 5px; }
+
+        .header-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
 
         .controls {
             display: flex;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
+        .theme-toggle {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover { border-color: var(--button-active); }
+
         .btn {
-            background-color: var(--card-bg);
-            border: 1px solid #474d57;
-            color: var(--text-primary);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
             padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
@@ -77,22 +117,24 @@
         }
 
         .chart-card {
-            background-color: var(--card-bg);
+            background-color: var(--bg-card);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             height: 400px;
+            transition: background-color 0.3s;
         }
 
         .summary-card {
-            background-color: var(--card-bg);
+            background-color: var(--bg-card);
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             width: 100%;
             max-width: 1200px;
             box-sizing: border-box;
             border-left: 5px solid var(--accent-spread);
+            transition: background-color 0.3s;
         }
 
         .summary-card h2 {
@@ -109,8 +151,8 @@
             font-size: 1.4rem;
             font-weight: 700;
             margin-bottom: 10px;
-            color: var(--text-primary);
-            border-bottom: 1px solid #474d57;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 10px;
         }
 
@@ -120,13 +162,13 @@
             gap: 15px;
             margin-top: 20px;
             padding-top: 15px;
-            border-top: 1px solid #474d57;
+            border-top: 1px solid var(--border-color);
         }
 
         .commentary-nav-btn {
-            background-color: #2b3139;
-            border: 1px solid #474d57;
-            color: var(--text-primary);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
@@ -138,7 +180,7 @@
         }
 
         .commentary-nav-btn:hover:not(:disabled) {
-            background-color: #474d57;
+            background-color: var(--border-color);
             border-color: var(--button-active);
         }
 
@@ -149,13 +191,13 @@
 
         .commentary-counter {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-family: monospace;
         }
 
         .summary-card p {
             line-height: 1.6;
-            color: var(--text-primary);
+            color: var(--text-main);
             font-size: 0.95rem;
             white-space: pre-line;
             margin-bottom: 0;
@@ -172,11 +214,11 @@
             width: 100%;
             max-width: 1200px;
             box-sizing: border-box;
-            color: #ffbd2e;
+            color: var(--accent-spread);
             font-size: 0.85rem;
             padding: 12px 15px;
             border-left: 4px solid #ff4500;
-            background: rgba(30, 35, 41, 0.8);
+            background: var(--bg-card);
             border-radius: 4px;
             margin-bottom: -15px;
         }
@@ -188,9 +230,29 @@
             max-width: 1200px;
             margin-top: 40px;
             padding-bottom: 20px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             font-size: 0.8rem;
             text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-actions {
+                width: 100%;
+                align-items: flex-start;
+            }
+            .controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .btn {
+                flex: 1;
+                text-align: center;
+                padding: 6px 4px;
+            }
         }
     </style>
 </head>
@@ -201,12 +263,17 @@
         <h1>Canadian Government Bond Yield Analysis</h1>
         <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of <span id="last-updated">...</span></p>
     </div>
-    <div class="controls">
-        <button id="btn7d" class="btn active" onclick="updateRange(7, this)">7D</button>
-        <button id="btn30d" class="btn" onclick="updateRange(30, this)">30D</button>
-        <button id="btn90d" class="btn" onclick="updateRange(90, this)">90D</button>
-        <button id="btn1y" class="btn" onclick="updateRange(365, this)">1Y</button>
-        <button id="btnmax" class="btn" onclick="updateRange(0, this)">MAX</button>
+    <div class="header-actions">
+        <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
+        </button>
+        <div class="controls">
+            <button id="btn7d" class="btn active" onclick="updateRange(7, this)">7D</button>
+            <button id="btn30d" class="btn" onclick="updateRange(30, this)">30D</button>
+            <button id="btn90d" class="btn" onclick="updateRange(90, this)">90D</button>
+            <button id="btn1y" class="btn" onclick="updateRange(365, this)">1Y</button>
+            <button id="btnmax" class="btn" onclick="updateRange(0, this)">MAX</button>
+        </div>
     </div>
 </header>
 
@@ -253,14 +320,39 @@
 </footer>
 
 <script>
+    function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (theme === 'light') {
+            icon.textContent = '☀️';
+            text.textContent = 'Light Mode';
+        } else {
+            icon.textContent = '🌙';
+            text.textContent = 'Dark Mode';
+        }
+        // Update Chart.js defaults for the new theme
+        Chart.defaults.color = theme === 'light' ? '#474d57' : '#848e9c';
+        Chart.defaults.borderColor = theme === 'light' ? '#e6e8ea' : '#2b3139';
+        // Re-render charts to apply theme changes
+        updateRange(currentRangeDays);
+    }
+
+    function toggleTheme() {
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    // Initialize Theme
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    setTheme(savedTheme);
+
+    let currentRangeDays = 7;
     let rawData = [];
     let yieldChart, spreadChart, marginChart;
     let commentaryHistory = [];
     let currentCommentaryIndex = 0;
-
-    // Global configuration for Chart.js
-    Chart.defaults.color = '#848e9c';
-    Chart.defaults.borderColor = '#2b3139';
 
     function updateCommentaryUI(index) {
         if (!commentaryHistory || commentaryHistory.length === 0) return;
@@ -371,6 +463,7 @@
             document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
         }
+        currentRangeDays = days;
 
         let filteredData = rawData;
         if (days > 0) {
