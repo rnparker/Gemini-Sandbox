@@ -505,6 +505,10 @@
             .then(response => response.ok ? response.json() : Promise.reject('Events not found'))
             .then(data => {
                 marketEvents = data.events || [];
+                // Re-render if data is already loaded
+                if (rawData && rawData.length > 0) {
+                    updateRange(currentRangeDays);
+                }
             })
             .catch(err => console.log('Market events skip:', err));
 
