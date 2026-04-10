@@ -18,6 +18,8 @@ def test_market_events_valid_json():
         assert "date" in event
         assert "label" in event
         assert "type" in event
+        assert "outcome" in event
+        assert "details" in event
         assert event["type"] in ["boc", "cpi"]
         # Basic date format check (YYYY-MM-DD)
         parts = event["date"].split("-")

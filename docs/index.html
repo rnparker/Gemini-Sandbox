@@ -213,9 +213,14 @@
         <p>2Y vs 5Y Benchmark Bonds & Historical Spread | Data current as of <span id="last-updated">...</span></p>
     </div>
     <div class="header-actions">
-        <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">
-            <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
-        </button>
+        <div class="controls">
+            <button id="event-toggle" class="theme-toggle" onclick="toggleEvents()">
+                <span id="event-icon">📍</span> <span id="event-text">Events: On</span>
+            </button>
+            <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span> <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
         <div class="controls">
             <button id="btn7d" class="btn active" onclick="updateRange(7, this)">7D</button>
             <button id="btn30d" class="btn" onclick="updateRange(30, this)">30D</button>
@@ -261,6 +266,7 @@
 <script>
     // --- State & Config ---
     let currentRangeDays = 7;
+    let showAnnotations = true;
     let rawData = [];
     let marketEvents = [];
     let yieldChart, spreadChart, marginChart;
@@ -297,6 +303,20 @@
     function toggleTheme() {
         const currentTheme = localStorage.getItem('theme') || 'dark';
         setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    function toggleEvents() {
+        showAnnotations = !showAnnotations;
+        const icon = document.getElementById('event-icon');
+        const text = document.getElementById('event-text');
+        if (showAnnotations) {
+            icon.textContent = '📍';
+            text.textContent = 'Events: On';
+        } else {
+            icon.textContent = '⭕';
+            text.textContent = 'Events: Off';
+        }
+        updateRange(currentRangeDays);
     }
 
     function updateCommentaryUI(index) {
@@ -339,17 +359,18 @@
     }
 
     function getAnnotations(labels) {
-        if (!marketEvents || marketEvents.length === 0) return {};
+        if (!marketEvents || marketEvents.length === 0 || !showAnnotations) return {};
         
         const annotations = {};
         const style = getComputedStyle(document.documentElement);
         const bocColor = style.getPropertyValue('--text-muted').trim();
         const cpiColor = style.getPropertyValue('--accent-mortgage').trim();
-        const textColor = style.getPropertyValue('--text-main').trim();
 
         marketEvents.forEach((ev, idx) => {
             if (labels.includes(ev.date)) {
                 const color = ev.type === 'boc' ? bocColor : cpiColor;
+                const displayLabel = ev.outcome ? `${ev.label} (${ev.outcome})` : ev.label;
+                
                 annotations['event' + idx] = {
                     type: 'line',
                     xMin: ev.date,
@@ -359,12 +380,13 @@
                     borderDash: [4, 4],
                     label: {
                         display: true,
-                        content: ev.label,
+                        content: displayLabel,
                         position: 'start',
                         backgroundColor: color,
                         color: '#fff',
-                        font: { size: 10 },
-                        padding: 2
+                        font: { size: 10, weight: 'bold' },
+                        padding: 4,
+                        borderRadius: 4
                     }
                 };
             }

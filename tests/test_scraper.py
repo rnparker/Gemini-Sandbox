@@ -2,7 +2,7 @@ import pytest
 import requests_mock
 import os
 import csv
-from pulse_check import get_best_5y_fixed, update_dashboard_data, SERIES_2Y, SERIES_5Y, SERIES_CORRA, RATEHUB_URL
+from pulse_check import get_best_5y_fixed, update_dashboard_data, SERIES_2Y, SERIES_5Y, SERIES_CORRA, SERIES_TARGET, RATEHUB_URL
 
 def test_get_best_5y_fixed_success():
     """
@@ -145,11 +145,11 @@ def test_update_dashboard_data_rate_limit(tmp_path):
         })
 
     # Mock BoC API to return observations (descending order)
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?recent=10"
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}%2C{SERIES_TARGET}/json?recent=10"
     mock_boc_data = {
         "observations": [
-            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}, SERIES_CORRA: {"v": "4.0"}},
-            {"d": "2026-03-24", SERIES_2Y: {"v": "2.4"}, SERIES_5Y: {"v": "2.9"}, SERIES_CORRA: {"v": "4.0"}}
+            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}, SERIES_CORRA: {"v": "4.0"}, SERIES_TARGET: {"v": "4.25"}},
+            {"d": "2026-03-24", SERIES_2Y: {"v": "2.4"}, SERIES_5Y: {"v": "2.9"}, SERIES_CORRA: {"v": "4.0"}, SERIES_TARGET: {"v": "4.25"}}
         ]
     }
 
@@ -188,10 +188,10 @@ def test_update_dashboard_data_no_rate_limit(tmp_path):
             'lending_margin': ''
         })
 
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?recent=10"
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}%2C{SERIES_TARGET}/json?recent=10"
     mock_boc_data = {
         "observations": [
-            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}, SERIES_CORRA: {"v": "4.0"}}
+            {"d": "2026-03-25", SERIES_2Y: {"v": "2.5"}, SERIES_5Y: {"v": "3.0"}, SERIES_CORRA: {"v": "4.0"}, SERIES_TARGET: {"v": "4.25"}}
         ]
     }
     
@@ -216,4 +216,3 @@ def test_update_dashboard_data_no_rate_limit(tmp_path):
             rows = list(reader)
             assert rows[0]['mortgage_5y'] == '3.99'
             assert rows[0]['repo_rate'] == '4.5'
-

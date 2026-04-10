@@ -7,15 +7,50 @@ from datetime import datetime
 # BD.CDN.2YR.DQ.YLD = 2-Year Benchmark Bond Yield
 # BD.CDN.5YR.DQ.YLD = 5-Year Benchmark Bond Yield
 # AVG.INTWO = CORRA (Canadian Overnight Repo Rate Average)
+# V39079 = Bank of Canada Target for the Overnight Rate
 SERIES_2Y = "BD.CDN.2YR.DQ.YLD"
 SERIES_5Y = "BD.CDN.5YR.DQ.YLD"
 SERIES_CORRA = "AVG.INTWO"
+SERIES_TARGET = "V39079"
 
 # Ratehub API Configuration
 RATEHUB_URL = "https://api.ratehub.ca/mortgage-rates/all/purchase-rates?amortization=25&downPaymentPercent=0.05&homePrice=400000&isCashBack=0&isOpen=0&isOwnerOccupied=1&isPreApproval=0&language=en&province=BC&term=60&type=fixed"
 
 # Allow overriding the CSV file path via environment variable for PR previews
 CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
+EVENTS_FILE = "docs/market_events.json"
+
+def update_event_outcomes(date, target_rate):
+    """
+    Updates market_events.json with the outcome of a BoC meeting.
+    """
+    if not os.path.exists(EVENTS_FILE):
+        return
+
+    import json
+    try:
+        with open(EVENTS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        events = data.get('events', [])
+        changed = False
+
+        # Find the BoC event for this date
+        for event in events:
+            if event['date'] == date and event['type'] == 'boc':
+                # We need to find the previous target rate to calculate the change
+                # For simplicity, we just store the new rate if it's not already set
+                current_outcome = f"{target_rate}%"
+                if event.get('outcome') != current_outcome:
+                    event['outcome'] = current_outcome
+                    changed = True
+                    print(f"📊 Updated BoC event outcome for {date}: {current_outcome}")
+
+        if changed:
+            with open(EVENTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"⚠️ Warning: Could not update event outcomes: {e}")
 
 def get_best_5y_fixed():
     """
@@ -83,13 +118,11 @@ def update_dashboard_data():
     Returns True if new data was added or existing data updated, False otherwise.
     """
     # 1. Fetch Latest BoC Bond Yields to determine the most recent observation date
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2CSERIES_CORRA/json?recent=10"
-    # Actually, the string representation of SERIES_CORRA should be used in the URL
-    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?recent=10"
+    boc_url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}%2C{SERIES_TARGET}/json?recent=10"
     
     try:
-        # Fetch bond yields and CORRA
-        print(f"📡 Fetching BoC yields for {SERIES_2Y}, {SERIES_5Y}, and {SERIES_CORRA}...")
+        # Fetch bond yields, CORRA and Target Rate
+        print(f"📡 Fetching BoC data for {SERIES_2Y}, {SERIES_5Y}, {SERIES_CORRA}, and {SERIES_TARGET}...")
         boc_resp = requests.get(boc_url, timeout=15)
         boc_resp.raise_for_status()
         boc_data = boc_resp.json()
@@ -100,8 +133,6 @@ def update_dashboard_data():
             return False
 
         # 2. Check if we already have complete data for the latest observation date
-        # This acts as a rate-limiting mechanism for the Ratehub API.
-        # BoC API may return observations in descending order. Use max() for safety.
         latest_date = max(obs['d'] for obs in observations)
         all_rows = get_all_rows(CSV_FILE)
         existing_data = {row['date']: row for row in all_rows}
@@ -109,12 +140,10 @@ def update_dashboard_data():
         best_mortgage = None
         latest_row = existing_data.get(latest_date)
         
-        # If the latest date exists and already has mortgage data, skip Ratehub API call
         if latest_row and latest_row.get('mortgage_5y') is not None:
             print(f"✨ Latest observation date {latest_date} already has mortgage data in CSV. Skipping Ratehub API call.")
             best_mortgage = latest_row['mortgage_5y']
         else:
-            # Fetch latest mortgage rate only if needed
             best_mortgage = get_best_5y_fixed()
 
         data_changed = False
@@ -125,6 +154,11 @@ def update_dashboard_data():
             val_2y = obs.get(SERIES_2Y, {}).get('v')
             val_5y = obs.get(SERIES_5Y, {}).get('v')
             val_corra = obs.get(SERIES_CORRA, {}).get('v')
+            val_target = obs.get(SERIES_TARGET, {}).get('v')
+            
+            # If target rate exists, update events
+            if val_target:
+                update_event_outcomes(date, val_target)
             
             if val_2y and val_5y:
                 y2 = float(val_2y)

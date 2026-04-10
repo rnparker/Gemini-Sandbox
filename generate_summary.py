@@ -121,16 +121,18 @@ Analyze the following Canadian Government Bond Yield data (2Y vs 5Y), the Refere
 
 {history_context}
 
-Your task is to provide a revised and improved concise summary (2-3 paragraphs) for a dashboard.
+Your task is to provide two outputs:
+1. A revised and improved concise market summary (2-3 paragraphs).
+2. A JSON-formatted data extraction of any Canadian market events that occurred TODAY.
 
-### MANDATORY GUIDELINES ###
+### MANDATORY GUIDELINES FOR SUMMARY ###
 - **STRICTLY NO FIRST-PERSON PRONOUNS:** Do not use "we", "our", "us", or "I".
 - **GENERIC COMMENTARY ONLY:** Do NOT refer to the dashboard's owner or host as "our institution" or "our rates". 
 - **NO RATE OWNERSHIP:** The mortgage rates provided are from other institutions in the market, NOT the institution this summary is for. Do not imply ownership of these rates.
 - **DO NOT USE PHRASES LIKE:** "For our institution", "While our best 5-year fixed mortgage...", "our lending margin". Use instead: "For a typical small FI", "The market's best 5-year fixed mortgage...", "The lending margin".
 
-Requirements:
-1. Research and incorporate the LATEST major market happenings for Canadian and US bond markets as of {current_date_str}.
+Summary Requirements:
+1. Research and incorporate the LATEST major market happenings for Canadian and US bond markets as of {current_date_str}. Commentary should correlate with the visual annotations (BoC/CPI) provided on the dashboard charts.
 2. Explicitly correlate the data with these happenings (e.g., specific central bank speeches, policy changes, geopolitical events, key economic data like CPI/Jobs, and US Treasury volatility).
 3. Explain the current trend in the 2-year and 5-year yields and the resulting spread.
 4. **REPO RATE ANALYSIS:** Discuss the Reference Repo Rate (CORRA + 50 bps). How does it relate to the 2-year and 5-year bond yields? What does its current level suggest about overnight funding costs and liquidity compared to longer-term bond yields?
@@ -147,13 +149,29 @@ Requirements:
    - Avoid repeating the same general observations from previous days unless there is a significant change in the data or market sentiment.
 9. Keep the tone professional, insightful, and concise. 
 
-Output the summary in plain text.
+### DATA EXTRACTION REQUIREMENTS ###
+Research if a Bank of Canada meeting or a Statistics Canada CPI release occurred on {current_date_str}.
+If found, provide a JSON block at the end of your response:
+```json
+{{
+  "event_found": true,
+  "type": "boc" or "cpi",
+  "outcome": "e.g., +25bps, -50bps, Hold, or 2.8% (for CPI)",
+  "details": "A very brief 1-sentence explanation of the result."
+}}
+```
+If no event occurred, return:
+```json
+{{ "event_found": false }}
+```
+
+Output the summary first, followed by the JSON block.
 """
 
     try:
         client = genai.Client(api_key=API_KEY)
         
-        print(f"📡 Generating dynamic AI summary using Gemini 3 Flash (Preview) with Google Search grounding...")
+        print(f"📡 Generating dynamic AI summary and extracting events using Gemini 3 Flash (Preview)...")
         
         response = client.models.generate_content(
             model='gemini-3-flash-preview',
@@ -162,8 +180,24 @@ Output the summary in plain text.
                 tools=[types.Tool(google_search=types.GoogleSearch())]
             )
         )
-        summary_text = response.text.strip()
+        full_text = response.text.strip()
         
+        # Parse JSON extraction
+        summary_text = full_text
+        extraction = None
+        if "```json" in full_text:
+            parts = full_text.split("```json")
+            summary_text = parts[0].strip()
+            json_str = parts[1].split("```")[0].strip()
+            try:
+                extraction = json.loads(json_str)
+            except:
+                print("⚠️ Warning: Could not parse AI event extraction JSON.")
+
+        # Update market_events.json if event found
+        if extraction and extraction.get('event_found'):
+            update_market_events(extraction, now_mt.strftime('%Y-%m-%d'))
+
         # 3. Update History and Save
         new_entry = {
             "date": now_mt.strftime("%Y-%m-%d %H:%M:%S"),
@@ -189,6 +223,36 @@ Output the summary in plain text.
         
     except Exception as e:
         print(f"❌ Error generating summary: {e}")
+
+def update_market_events(extraction, date):
+    """
+    Merges AI-extracted event data into docs/market_events.json.
+    """
+    events_file = "docs/market_events.json"
+    if not os.path.exists(events_file):
+        return
+
+    try:
+        with open(events_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        events = data.get('events', [])
+        changed = False
+        
+        for event in events:
+            if event['date'] == date and event['type'] == extraction['type']:
+                if event.get('outcome') != extraction['outcome']:
+                    event['outcome'] = extraction['outcome']
+                    event['details'] = extraction['details']
+                    changed = True
+                    print(f"📊 AI Updated event outcome for {date}: {extraction['outcome']}")
+        
+        if changed:
+            with open(events_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"⚠️ Warning: Could not merge AI event data: {e}")
+
 
 if __name__ == "__main__":
     generate_summary()

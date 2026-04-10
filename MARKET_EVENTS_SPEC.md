@@ -4,7 +4,7 @@
 Provide visual context on the dashboard charts by highlighting significant Canadian market events, such as Bank of Canada (BoC) interest rate announcements and Consumer Price Index (CPI) release dates.
 
 ## 2. Data Structure (`docs/market_events.json`)
-The events are stored in a static JSON file with the following schema:
+The events are stored in a JSON file with the following schema:
 
 ```json
 {
@@ -12,28 +12,32 @@ The events are stored in a static JSON file with the following schema:
     {
       "date": "YYYY-MM-DD",
       "label": "Short Label (e.g., BoC, CPI)",
-      "type": "boc | cpi"
+      "type": "boc | cpi",
+      "outcome": "e.g., +25bps, Hold, or 2.8%",
+      "details": "Brief explanation of the result."
     }
   ]
 }
 ```
 
-### Event Types:
-- **boc:** Bank of Canada Interest Rate Announcement.
-- **cpi:** Statistics Canada Consumer Price Index release.
+## 3. Automation Strategy (Hybrid)
+To minimize manual maintenance, event outcomes are populated automatically:
 
-## 3. Visualization Logic
-The dashboard uses the `chartjs-plugin-annotation` library to render these events as vertical dashed lines.
+### 3.1. BoC Rate Outcomes (Programmatic)
+The `pulse_check.py` script fetches the BoC Target Rate (Series `V39079`). On scheduled BoC meeting dates, it records the new target rate as the `outcome` in the JSON file.
 
-### Styling Requirements:
-| Element | Dark Mode | Light Mode |
-| :--- | :--- | :--- |
-| **BoC Line** | Grey (`--text-muted`) | Dark Grey (`--text-muted`) |
-| **CPI Line** | OrangeRed (`--accent-mortgage`) | Deep Red (`--accent-mortgage`) |
-| **Labels** | Small, Start of line, White text on event color | Small, Start of line, White text on event color |
+### 3.2. CPI & Contextual Outcomes (AI-Driven)
+The `generate_summary.py` script utilizes Gemini with Google Search grounding. During daily runs, the AI is tasked with:
+1. Detecting if a CPI release occurred.
+2. Extracting the headline inflation percentage.
+3. Providing a one-sentence summary of the event context.
+This data is merged into the JSON structure.
 
-## 4. Maintenance
-As these dates are typically released by the BoC and Statistics Canada at the end of each year for the following year, this file should be updated annually.
+## 4. Visualization Logic
+The dashboard uses the `chartjs-plugin-annotation` library to render these events.
 
-- **BoC Source:** [Bank of Canada Press Release Schedule](https://www.bankofcanada.ca/press/scheduled-announcement-dates/)
-- **CPI Source:** [Statistics Canada Release Schedule](https://www150.statcan.gc.ca/n1/dai-quo/cal-en.htm)
+### Features:
+- **Toggle:** Users can show/hide annotations via the "Events" toggle button.
+- **Rich Labels:** Annotations display the outcome directly on the chart (e.g., "CPI (2.8%)").
+- **Theme Awareness:** Colors and labels adjust dynamically between Dark and Light modes.
+
