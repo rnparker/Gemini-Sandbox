@@ -371,6 +371,10 @@
                 const color = ev.type === 'boc' ? bocColor : cpiColor;
                 const displayLabel = ev.outcome ? `${ev.label} (${ev.outcome})` : ev.label;
                 
+                // Alternate label position to prevent overlap
+                const isEven = idx % 2 === 0;
+                const position = isEven ? 'start' : 'end';
+                
                 annotations['event' + idx] = {
                     type: 'line',
                     xMin: ev.date,
@@ -381,12 +385,13 @@
                     label: {
                         display: true,
                         content: displayLabel,
-                        position: 'start',
+                        position: position,
                         backgroundColor: color,
                         color: '#fff',
                         font: { size: 10, weight: 'bold' },
                         padding: 4,
-                        borderRadius: 4
+                        borderRadius: 4,
+                        yAdjust: isEven ? 20 : -20
                     }
                 };
             }
@@ -452,6 +457,19 @@
         if (spreadChart) spreadChart.destroy();
         if (marginChart) marginChart.destroy();
 
+        const tooltipConfig = {
+            callbacks: {
+                footer: (tooltipItems) => {
+                    const date = tooltipItems[0].label;
+                    const event = marketEvents.find(e => e.date === date);
+                    if (event && event.details) {
+                        return '\nEvent: ' + event.details;
+                    }
+                    return '';
+                }
+            }
+        };
+
         yieldChart = new Chart(yieldCtx, {
             type: 'line',
             data: {
@@ -468,7 +486,8 @@
                 plugins: {
                     title: { display: true, text: 'Canadian Yield Comparison (2Y vs 5Y vs Repo)', color: Chart.defaults.color },
                     legend: { position: 'top' },
-                    annotation: { annotations: annotations }
+                    annotation: { annotations: annotations },
+                    tooltip: tooltipConfig
                 },
                 scales: { y: { title: { display: true, text: 'Yield (%)' } } }
             }
@@ -488,7 +507,8 @@
                 interaction: { mode: 'index', intersect: false },
                 plugins: { 
                     title: { display: true, text: 'Canadian 5Y - 2Y Spread (Daily & 7D MA)', color: Chart.defaults.color },
-                    annotation: { annotations: annotations }
+                    annotation: { annotations: annotations },
+                    tooltip: tooltipConfig
                 },
                 scales: { y: { title: { display: true, text: 'Spread (%)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#ff4d4d' : Chart.defaults.borderColor } } }
             }
@@ -509,7 +529,8 @@
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     title: { display: true, text: 'Lending Margin Analysis (Mortgage vs Bond)', color: Chart.defaults.color },
-                    legend: { position: 'top' }
+                    legend: { position: 'top' },
+                    tooltip: tooltipConfig
                 },
                 scales: { y: { title: { display: true, text: 'Rate / Margin (%)' } } }
             }
