@@ -26,6 +26,7 @@ The generated commentary must cover:
 3. **Repo Rate Analysis:** Analysis of the Reference Repo Rate (CORRA + 50 bps) and its relationship to bond yields and liquidity.
 4. **Mortgage & Margin Impact:** Analysis of how the 'Best 5Y Fixed' mortgage rate and 'Lending Margin' are responding to bond moves.
 5. **FI Operational Impact:** Generic explanation of impacts on mortgage rate setting, deposit rate setting, institutional borrowing costs (using Repo Rate as proxy), and institutional profitability.
+   - **Liquidity Strategy:** Commentary on "net long" (surplus) vs "net short" (deficit) liquidity positions and how they dictate pricing aggressiveness for both assets and liabilities as they relate to CORRA and the 2-5 yield spread.
 6. **US-Canada Link:** Highlight the correlation between the US and Canadian bond markets.
 7. **Narrative Arc:** Use history to treat recurring events as "continuing the story" rather than new information.
 

@@ -142,6 +142,7 @@ Summary Requirements:
    - Setting deposit rates (how the 2Y yield impacts GICs).
    - Funding costs (using the Repo Rate as a proxy for institutional borrowing costs).
    - Lending margins and institutional profitability.
+   - **LIQUIDITY STRATEGY:** Discuss how a "net long" (surplus) vs "net short" (deficit) liquidity position changes an FI's pricing strategy. For example, how a net short position (high reliance on CORRA-indexed wholesale funding) requires more defensive loan pricing (higher margins) and aggressive deposit gathering, whereas a net long position allows for more aggressive asset pricing to deploy excess capital, especially when the 2-5 spread is volatile.
 7. Highlight the impact of the US-Canada bond market link.
 8. **CONTINUITY & CONTEXT:** Use the provided 'PREVIOUS ANALYSIS HISTORY' to maintain a narrative arc. 
    - DO NOT treat recurring events (e.g., ongoing geopolitical tension or already reported CPI data) as "net new" information if they appear in the history.
