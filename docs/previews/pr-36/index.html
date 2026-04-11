@@ -371,9 +371,9 @@
                 const color = ev.type === 'boc' ? bocColor : cpiColor;
                 const displayLabel = ev.outcome ? `${ev.label} (${ev.outcome})` : ev.label;
                 
-                // Alternate label position to prevent overlap
+                // Staggered top-down positioning to prevent clipping and overlap
+                // Even = higher, Odd = lower
                 const isEven = idx % 2 === 0;
-                const position = isEven ? 'start' : 'end';
                 
                 annotations['event' + idx] = {
                     type: 'line',
@@ -385,13 +385,13 @@
                     label: {
                         display: true,
                         content: displayLabel,
-                        position: position,
+                        position: 'end', // Always at top
                         backgroundColor: color,
                         color: '#fff',
                         font: { size: 10, weight: 'bold' },
                         padding: 4,
                         borderRadius: 4,
-                        yAdjust: isEven ? 20 : -20
+                        yAdjust: isEven ? 10 : 45 // Stagger vertically
                     }
                 };
             }
@@ -470,6 +470,8 @@
             }
         };
 
+        const chartLayout = { padding: { top: 35, bottom: 10 } };
+
         yieldChart = new Chart(yieldCtx, {
             type: 'line',
             data: {
@@ -482,6 +484,7 @@
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
+                layout: chartLayout,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     title: { display: true, text: 'Canadian Yield Comparison (2Y vs 5Y vs Repo)', color: Chart.defaults.color },
@@ -504,6 +507,7 @@
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
+                layout: chartLayout,
                 interaction: { mode: 'index', intersect: false },
                 plugins: { 
                     title: { display: true, text: 'Canadian 5Y - 2Y Spread (Daily & 7D MA)', color: Chart.defaults.color },
