@@ -7,18 +7,23 @@ graph TD
     E -- No --> F[Skip Ratehub API]
     E -- Yes --> G[Fetch latest Mortgage Rates from Ratehub]
     G --> H[Calculate Yield Spread, Repo Rate & Lending Margin]
+    H --> H1[Update BoC Event Outcomes - Series V39079]
     F --> I[AI Analysis: generate_summary.py]
-    H --> I
+    H1 --> I
     I --> J[Check docs/summary.json Cache - 2h]
     J --> K[Invoke Gemini Model with Search Grounding]
-    K --> L[Update docs/summary.json and History]
-    L --> M[Commit & Push updated Data/Summary]
+    K --> K1[AI Extracts Event Outcomes: CPI % / Context]
+    K1 --> L[Update docs/summary.json and History]
+    L --> L1[Merge Outcomes into market_events.json]
+    L1 --> M[Commit & Push updated Data/Summary/Events]
     end
 
     subgraph Frontend ["Frontend: Market Pulse Dashboard"]
     N[User Opens docs/index.html] --> O[PapaParse reads historical_spread.csv]
+    N --> R1[Fetch market_events.json]
     O --> P[Filter valid rows & Handle Inversions - Red]
     P --> Q[Update Charts & Last-Updated MT Timestamp]
+    R1 --> Q
     O --> R[Fetch & Display summary.json Analysis]
     end
 

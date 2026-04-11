@@ -19,6 +19,12 @@ Orchestrate the collection of Bank of Canada (BoC) bond yields and Ratehub mortg
   - Filter by `insuranceBucket == "insured"`.
   - **Result:** Minimum `value` from the filtered set.
 
+### 2.3. Market Events (`docs/market_events.json`)
+- **Type:** Static JSON file.
+- **Content:** Scheduled BoC meeting dates and CPI release dates.
+- **Purpose:** Provide visual annotations on dashboard charts.
+- **Reference:** `MARKET_EVENTS_SPEC.md`.
+
 ## 3. Calculated Metrics
 - **Yield Spread:** `CAN 5Y Yield - CAN 2Y Yield`.
 - **Reference Repo Rate:** `CORRA + 0.50` (50 bps margin).
