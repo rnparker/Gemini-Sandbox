@@ -26,7 +26,6 @@
     { "date": "2026-03-16", "label": "CPI", "type": "cpi", "outcome": "1.8%", "details": "February CPI held steady at multi-year lows." },
     { "date": "2026-03-18", "label": "BoC", "type": "boc", "outcome": "Hold", "details": "BoC maintains 2.25% rate citing disinflation progress." },
     { "date": "2026-04-15", "label": "CPI", "type": "cpi", "outcome": null, "details": null },
-    { "date": "2026-04-20", "label": "BoC", "type": "boc", "outcome": null, "details": null },
     { "date": "2026-04-29", "label": "BoC", "type": "boc", "outcome": null, "details": null },
     { "date": "2026-05-19", "label": "CPI", "type": "cpi", "outcome": null, "details": null },
     { "date": "2026-06-10", "label": "BoC", "type": "boc", "outcome": null, "details": null },
