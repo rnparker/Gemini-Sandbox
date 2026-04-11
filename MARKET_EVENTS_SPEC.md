@@ -37,7 +37,9 @@ This data is merged into the JSON structure.
 The dashboard uses the `chartjs-plugin-annotation` library to render these events.
 
 ### Features:
-- **Toggle:** Users can show/hide annotations via the "Events" toggle button.
-- **Rich Labels:** Annotations display the outcome directly on the chart (e.g., "CPI (2.8%)").
+- **Toggle:** Users can show/hide annotations via the "Events" toggle button in the header.
+- **Rich Labels:** Annotations display the outcome directly on the chart (e.g., "BoC (Hold)" or "CPI (1.8%)").
+- **Staggered Positioning:** To prevent overlap on dense scales (1Y/MAX), labels alternate their vertical `yAdjust` values (10px vs 45px from top).
+- **Tooltips:** Hovering over an event date on any chart displays the `details` field in the chart's footer tooltip.
 - **Theme Awareness:** Colors and labels adjust dynamically between Dark and Light modes.
 
