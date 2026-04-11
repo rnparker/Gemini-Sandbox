@@ -5,7 +5,7 @@ import os
 
 def main():
     # Allow force generation via environment variable
-    force_gen = True # Temporarily forced for PR preview verification
+    force_gen = os.getenv("FORCE_AI_SUMMARY", "false").lower() == "true"
     
     # 1. Update data and check if anything changed
     print("🔄 Starting Pulse Check...")
