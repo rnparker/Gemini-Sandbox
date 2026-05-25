@@ -51,6 +51,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SPREAD_CSV_PATH: "docs/previews/pr-${{ github.event.number }}/historical_spread.csv"
+          MARKET_EVENTS_PATH: "docs/previews/pr-${{ github.event.number }}/market_events.json"
         run: python main.py
 
       - name: Commit and Push Preview to Main

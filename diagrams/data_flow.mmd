@@ -12,7 +12,9 @@ graph TD
     H1 --> I
     I --> J[Check docs/summary.json Cache - 2h]
     J --> K[Invoke Gemini Model with Search Grounding]
-    K --> K1[AI Extracts Event Outcomes: CPI % / Context]
+    J -.-> J1[Identify Missing Historical Events in JSON]
+    J1 -.-> K
+    K --> K1[AI Extracts Multiple Event Outcomes: CPI % / Context]
     K1 --> L[Update docs/summary.json and History]
     L --> L1[Merge Outcomes into market_events.json]
     L1 --> M[Commit & Push updated Data/Summary/Events]

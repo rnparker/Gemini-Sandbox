@@ -89,10 +89,62 @@ class TestSummaryGeneration(unittest.TestCase):
                 mock_mt.return_value = datetime.now() + timedelta(days=20)
                 generate_summary.generate_summary()
 
-        with open(self.summary_file, "r") as f:
-            data = json.load(f)
-            self.assertEqual(len(data["history"]), 10)
-            self.assertEqual(data["history"][0]["summary"], "Newest summary.")
+            with open(self.summary_file, "r") as f:
+                data = json.load(f)
+                self.assertEqual(len(data["history"]), 10)
+                self.assertEqual(data["history"][0]["summary"], "Newest summary.")
+
+    def test_update_market_events(self):
+        # Create a dummy market_events.json
+        events_file = "docs/market_events.json"
+        # Backup original if exists
+        original_events = None
+        if os.path.exists(events_file):
+            with open(events_file, 'r') as f:
+                original_events = f.read()
+        
+        try:
+            test_events = {
+                "events": [
+                    { "date": "2026-04-15", "label": "CPI", "type": "cpi", "outcome": None, "details": None },
+                    { "date": "2026-05-19", "label": "CPI", "type": "cpi", "outcome": None, "details": None }
+                ]
+            }
+            with open(events_file, 'w', encoding='utf-8') as f:
+                json.dump(test_events, f)
+            
+            extractions = [
+                {
+                    "event_found": True,
+                    "date": "2026-04-15",
+                    "type": "cpi",
+                    "outcome": "2.0%",
+                    "details": "Inflation hit the 2% target."
+                },
+                {
+                    "event_found": True,
+                    "date": "2026-05-19",
+                    "type": "cpi",
+                    "outcome": "2.1%",
+                    "details": "Inflation slightly above target."
+                }
+            ]
+            
+            generate_summary.update_market_events(extractions)
+            
+            with open(events_file, 'r', encoding='utf-8') as f:
+                updated_data = json.load(f)
+                updated_events = updated_data["events"]
+                self.assertEqual(updated_events[0]["outcome"], "2.0%")
+                self.assertEqual(updated_events[1]["outcome"], "2.1%")
+                self.assertEqual(updated_events[0]["details"], "Inflation hit the 2% target.")
+        finally:
+            # Restore or remove dummy
+            if original_events:
+                with open(events_file, 'w') as f:
+                    f.write(original_events)
+            elif os.path.exists(events_file):
+                os.remove(events_file)
 
 if __name__ == "__main__":
     unittest.main()
