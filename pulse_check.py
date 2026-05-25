@@ -18,7 +18,7 @@ RATEHUB_URL = "https://api.ratehub.ca/mortgage-rates/all/purchase-rates?amortiza
 
 # Allow overriding the CSV file path via environment variable for PR previews
 CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
-EVENTS_FILE = "docs/market_events.json"
+EVENTS_FILE = os.getenv("MARKET_EVENTS_PATH", "docs/market_events.json")
 
 def update_event_outcomes(date, target_rate):
     """

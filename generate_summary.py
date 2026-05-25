@@ -13,6 +13,7 @@ except ImportError:
 
 # Configuration
 CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
+EVENTS_FILE = os.getenv("MARKET_EVENTS_PATH", "docs/market_events.json")
 # Save summary in the same directory as the CSV
 SUMMARY_FILE = os.path.join(os.path.dirname(CSV_FILE), "summary.json")
 API_KEY = os.getenv("GEMINI_API_KEY")
@@ -99,10 +100,9 @@ def generate_summary(force=False):
     
     # 2. Identify missing events from market_events.json
     missing_events_context = ""
-    events_file = "docs/market_events.json"
-    if os.path.exists(events_file):
+    if os.path.exists(EVENTS_FILE):
         try:
-            with open(events_file, 'r', encoding='utf-8') as f:
+            with open(EVENTS_FILE, 'r', encoding='utf-8') as f:
                 events_data = json.load(f)
                 events = events_data.get('events', [])
                 # Find past events with no outcome
@@ -264,12 +264,11 @@ def update_market_events(extractions):
     """
     Merges AI-extracted event data into docs/market_events.json.
     """
-    events_file = "docs/market_events.json"
-    if not os.path.exists(events_file):
+    if not os.path.exists(EVENTS_FILE):
         return
 
     try:
-        with open(events_file, 'r', encoding='utf-8') as f:
+        with open(EVENTS_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
         events = data.get('events', [])
@@ -296,7 +295,7 @@ def update_market_events(extractions):
                         print(f"📊 AI Updated event outcome for {date} ({e_type}): {outcome}")
         
         if changed:
-            with open(events_file, 'w', encoding='utf-8') as f:
+            with open(EVENTS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
     except Exception as e:
         print(f"⚠️ Warning: Could not merge AI event data: {e}")
