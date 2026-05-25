@@ -97,7 +97,26 @@ def generate_summary(force=False):
 
     current_date_str = now_mt.strftime("%B %d, %Y")
     
-    # 2. Integrate Previous Summaries into Prompt for continuity
+    # 2. Identify missing events from market_events.json
+    missing_events_context = ""
+    events_file = "docs/market_events.json"
+    if os.path.exists(events_file):
+        try:
+            with open(events_file, 'r', encoding='utf-8') as f:
+                events_data = json.load(f)
+                events = events_data.get('events', [])
+                # Find past events with no outcome
+                today_iso = now_mt.strftime('%Y-%m-%d')
+                missing = [e for e in events if e['date'] <= today_iso and (e.get('outcome') is None or e.get('details') is None)]
+                if missing:
+                    missing_events_context = "\n### MISSING HISTORICAL EVENTS (Research these as well) ###\n"
+                    for m in missing:
+                        missing_events_context += f"- Date: {m['date']}, Type: {m['type']}, Label: {m['label']}\n"
+                    missing_events_context += "Please find the actual outcomes and a brief 1-sentence detail for these past events if they have occurred.\n"
+        except Exception as e:
+            print(f"⚠️ Warning: Could not read market_events.json for missing events: {e}")
+
+    # 3. Integrate Previous Summaries into Prompt for continuity
     # We provide the last 10 summaries from history
     history_context = ""
     if history:
@@ -121,9 +140,11 @@ Analyze the following Canadian Government Bond Yield data (2Y vs 5Y), the Refere
 
 {history_context}
 
+{missing_events_context}
+
 Your task is to provide two outputs:
 1. A revised and improved concise market summary (2-3 paragraphs).
-2. A JSON-formatted data extraction of any Canadian market events that occurred TODAY.
+2. A JSON-formatted data extraction of any Canadian market events that occurred TODAY or are listed in the MISSING HISTORICAL EVENTS section.
 
 ### MANDATORY GUIDELINES FOR SUMMARY ###
 - **STRICTLY NO FIRST-PERSON PRONOUNS:** Do not use "we", "our", "us", or "I".
@@ -150,17 +171,23 @@ Summary Requirements:
 9. Keep the tone professional, insightful, and concise. 
 
 ### DATA EXTRACTION REQUIREMENTS ###
-Research if a Bank of Canada meeting or a Statistics Canada CPI release occurred on {current_date_str}.
-If found, provide a JSON block at the end of your response:
+Research if a Bank of Canada meeting or a Statistics Canada CPI release occurred on {current_date_str} OR on any of the dates listed in MISSING HISTORICAL EVENTS.
+For EACH event found, provide it in the "events" list in the JSON block:
 ```json
 {{
   "event_found": true,
-  "type": "boc" or "cpi",
-  "outcome": "e.g., +25bps, -50bps, Hold, or 2.8% (for CPI)",
-  "details": "A very brief 1-sentence explanation of the result."
+  "events": [
+    {{
+      "date": "YYYY-MM-DD",
+      "type": "boc" or "cpi",
+      "outcome": "e.g., +25bps, -50bps, Hold, or 2.8% (for CPI)",
+      "details": "A very brief 1-sentence explanation of the result."
+    }},
+    ...
+  ]
 }}
 ```
-If no event occurred, return:
+If no events occurred, return:
 ```json
 {{ "event_found": false }}
 ```
@@ -194,9 +221,18 @@ Output the summary first, followed by the JSON block.
             except:
                 print("⚠️ Warning: Could not parse AI event extraction JSON.")
 
-        # Update market_events.json if event found
+        # Update market_events.json if events found
         if extraction and extraction.get('event_found'):
-            update_market_events(extraction, now_mt.strftime('%Y-%m-%d'))
+            # The extraction might be a single event or a list of events if we found multiple missing ones
+            # For simplicity, we assume the AI returns one or more events
+            events_to_update = []
+            if 'events' in extraction:
+                events_to_update = extraction['events']
+            else:
+                # Fallback for single event format
+                events_to_update = [extraction]
+            
+            update_market_events(events_to_update)
 
         # 3. Update History and Save
         new_entry = {
@@ -224,7 +260,7 @@ Output the summary first, followed by the JSON block.
     except Exception as e:
         print(f"❌ Error generating summary: {e}")
 
-def update_market_events(extraction, date):
+def update_market_events(extractions):
     """
     Merges AI-extracted event data into docs/market_events.json.
     """
@@ -239,13 +275,25 @@ def update_market_events(extraction, date):
         events = data.get('events', [])
         changed = False
         
-        for event in events:
-            if event['date'] == date and event['type'] == extraction['type']:
-                if event.get('outcome') != extraction['outcome']:
-                    event['outcome'] = extraction['outcome']
-                    event['details'] = extraction['details']
-                    changed = True
-                    print(f"📊 AI Updated event outcome for {date}: {extraction['outcome']}")
+        for extraction in extractions:
+            if not extraction.get('event_found'):
+                continue
+                
+            date = extraction.get('date')
+            e_type = extraction.get('type')
+            outcome = extraction.get('outcome')
+            details = extraction.get('details')
+            
+            if not date or not e_type:
+                continue
+
+            for event in events:
+                if event['date'] == date and event['type'] == e_type:
+                    if event.get('outcome') != outcome:
+                        event['outcome'] = outcome
+                        event['details'] = details
+                        changed = True
+                        print(f"📊 AI Updated event outcome for {date} ({e_type}): {outcome}")
         
         if changed:
             with open(events_file, 'w', encoding='utf-8') as f:
