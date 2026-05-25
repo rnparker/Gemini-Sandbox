@@ -288,11 +288,13 @@ def update_market_events(extractions):
 
             for event in events:
                 if event['date'] == date and event['type'] == e_type:
-                    if event.get('outcome') != outcome:
-                        event['outcome'] = outcome
-                        event['details'] = details
-                        changed = True
-                        print(f"📊 AI Updated event outcome for {date} ({e_type}): {outcome}")
+                    # Defensive: Only update if the AI provided actual content
+                    if outcome and details:
+                        if event.get('outcome') != outcome or event.get('details') != details:
+                            event['outcome'] = outcome
+                            event['details'] = details
+                            changed = True
+                            print(f"📊 AI Updated event outcome for {date} ({e_type}): {outcome}")
         
         if changed:
             with open(EVENTS_FILE, 'w', encoding='utf-8') as f:
