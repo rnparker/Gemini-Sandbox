@@ -28,10 +28,10 @@ The `pulse_check.py` script fetches the BoC Target Rate (Series `V39079`). On sc
 
 ### 3.2. CPI & Contextual Outcomes (AI-Driven)
 The `generate_summary.py` script utilizes Gemini with Google Search grounding. During daily runs, the AI is tasked with:
-1. Detecting if a CPI release occurred.
-2. Extracting the headline inflation percentage.
-3. Providing a one-sentence summary of the event context.
-This data is merged into the JSON structure.
+1. **Backfilling Missing Data:** Scanning the JSON file for any past events (CPI or BoC) where `outcome` or `details` are `null`.
+2. **Current Event Detection:** Detecting if a new CPI release occurred on the current date.
+3. **Outcome Extraction:** Extracting headline rates (e.g., inflation percentage) and providing a one-sentence summary for all identified events.
+This data is merged into the JSON structure, ensuring the historical record remains complete even if a daily run is missed.
 
 ## 4. Visualization Logic
 The dashboard uses the `chartjs-plugin-annotation` library to render these events.
