@@ -10,7 +10,9 @@ Orchestrate the collection of Bank of Canada (BoC) bond yields and Ratehub mortg
   - `BD.CDN.2YR.DQ.YLD`: 2-Year Benchmark Bond Yield
   - `BD.CDN.5YR.DQ.YLD`: 5-Year Benchmark Bond Yield
   - `AVG.INTWO`: CORRA (Canadian Overnight Repo Rate Average)
-- **Parameters:** `recent=10` (to capture the latest observations).
+- **Parameters:** 
+  - `recent=10` (for daily capturing).
+  - `start_date=YYYY-MM-DD` (for historical backfills, up to 10 years).
 
 ### 2.2. Ratehub API
 - **URL:** `https://api.ratehub.ca/mortgage-rates/all/purchase-rates?amortization=25&downPaymentPercent=0.05&homePrice=400000&isCashBack=0&isOpen=0&isOwnerOccupied=1&isPreApproval=0&language=en&province=BC&term=60&type=fixed`

@@ -1,6 +1,7 @@
 graph TD
     subgraph Backend ["Backend: Pulse Check & AI Analysis"]
     A[GitHub Actions Trigger] --> B(Pulse Check: pulse_check.py)
+    A1[Manual Backfill: back_data.py] -.-> C
     B --> C[Read existing docs/historical_spread.csv]
     C --> D[Fetch latest BoC Bond Yields & CORRA]
     D --> E{New Data Found?}

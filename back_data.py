@@ -28,8 +28,8 @@ def fetch_historical_data():
         except Exception as e:
             print(f"⚠️ Warning: Could not read existing file for merge: {e}")
 
-    # 2. Calculate the start date (approximately 12 months ago)
-    start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+    # 2. Calculate the start date (approximately 10 years ago)
+    start_date = (datetime.now() - timedelta(days=3650)).strftime('%Y-%m-%d')
     
     url = f"https://www.bankofcanada.ca/valet/observations/{SERIES_2Y}%2C{SERIES_5Y}%2C{SERIES_CORRA}/json?start_date={start_date}"
     
