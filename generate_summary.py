@@ -275,9 +275,6 @@ def update_market_events(extractions):
         changed = False
         
         for extraction in extractions:
-            if not extraction.get('event_found'):
-                continue
-                
             date = extraction.get('date')
             e_type = extraction.get('type')
             outcome = extraction.get('outcome')
