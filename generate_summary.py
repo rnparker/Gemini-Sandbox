@@ -172,7 +172,12 @@ Summary Requirements:
 
 ### DATA EXTRACTION REQUIREMENTS ###
 Research if a Bank of Canada meeting or a Statistics Canada CPI release occurred on {current_date_str} OR on any of the dates listed in MISSING HISTORICAL EVENTS.
-For EACH event found, provide it in the "events" list in the JSON block:
+For EACH event found, provide it in the "events" list in the JSON block.
+
+**STRICT FORMATTING FOR OUTCOME:**
+- For **BoC**: Use "Hold" if no change, or "+25bps", "-50bps", etc. (e.g., use "bps" suffix).
+- For **CPI**: Use the percentage (e.g., "2.1%").
+
 ```json
 {{
   "event_found": true,
@@ -180,7 +185,7 @@ For EACH event found, provide it in the "events" list in the JSON block:
     {{
       "date": "YYYY-MM-DD",
       "type": "boc" or "cpi",
-      "outcome": "e.g., +25bps, -50bps, Hold, or 2.8% (for CPI)",
+      "outcome": "Hold, +25bps, -50bps, or 2.8%",
       "details": "A very brief 1-sentence explanation of the result."
     }},
     ...
