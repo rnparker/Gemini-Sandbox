@@ -242,6 +242,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Long-Term Yield Spread History (10Y)</h3>
             <div class="controls" id="historical-controls">
+                <button id="btn7d-hist" class="btn" onclick="updateHistoricalRange(7, this)">7D</button>
+                <button id="btn30d-hist" class="btn" onclick="updateHistoricalRange(30, this)">30D</button>
+                <button id="btn90d-hist" class="btn" onclick="updateHistoricalRange(90, this)">90D</button>
+                <button id="btn1y-hist" class="btn" onclick="updateHistoricalRange(365, this)">1Y</button>
                 <button id="btn3y" class="btn" onclick="updateHistoricalRange(1095, this)">3Y</button>
                 <button id="btn5y" class="btn" onclick="updateHistoricalRange(1825, this)">5Y</button>
                 <button id="btn10y" class="btn active" onclick="updateHistoricalRange(0, this)">MAX</button>
