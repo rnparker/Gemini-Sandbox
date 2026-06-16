@@ -9,6 +9,7 @@ on:
       - 'pulse_check.py'
       - 'generate_summary.py'
       - '.github/workflows/pr-preview.yml'
+  workflow_dispatch: # Allows manual triggers
 
 permissions:
   contents: write
@@ -50,6 +51,7 @@ jobs:
       - name: Run Market Pulse Analysis for Preview
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FORCE_AI_SUMMARY: "true"
           SPREAD_CSV_PATH: "docs/previews/pr-${{ github.event.number }}/historical_spread.csv"
           MARKET_EVENTS_PATH: "docs/previews/pr-${{ github.event.number }}/market_events.json"
         run: python main.py

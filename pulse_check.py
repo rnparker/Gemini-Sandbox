@@ -20,7 +20,7 @@ RATEHUB_URL = "https://api.ratehub.ca/mortgage-rates/all/purchase-rates?amortiza
 CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
 EVENTS_FILE = os.getenv("MARKET_EVENTS_PATH", "docs/market_events.json")
 
-def update_event_outcomes(date, target_rate):
+def update_event_outcomes(date, target_rate, prev_target_rate=None):
     """
     Updates market_events.json with the outcome of a BoC meeting.
     """
@@ -35,16 +35,24 @@ def update_event_outcomes(date, target_rate):
         events = data.get('events', [])
         changed = False
 
+        # Calculate outcome string
+        if prev_target_rate is not None:
+            diff = float(target_rate) - float(prev_target_rate)
+            bps = int(round(diff * 100))
+            if bps == 0:
+                outcome = "Hold"
+            else:
+                outcome = f"{bps:+}bps"
+        else:
+            outcome = f"{target_rate}%"
+
         # Find the BoC event for this date
         for event in events:
             if event['date'] == date and event['type'] == 'boc':
-                # We need to find the previous target rate to calculate the change
-                # For simplicity, we just store the new rate if it's not already set
-                current_outcome = f"{target_rate}%"
-                if event.get('outcome') != current_outcome:
-                    event['outcome'] = current_outcome
+                if event.get('outcome') != outcome:
+                    event['outcome'] = outcome
                     changed = True
-                    print(f"📊 Updated BoC event outcome for {date}: {current_outcome}")
+                    print(f"📊 Updated BoC event outcome for {date}: {outcome}")
 
         if changed:
             with open(EVENTS_FILE, 'w', encoding='utf-8') as f:
@@ -148,8 +156,11 @@ def update_dashboard_data():
 
         data_changed = False
 
-        # 3. Process observations
-        for obs in observations:
+        # 3. Process observations (sorted by date to track target rate changes)
+        prev_target = None
+        # We need the observation before the first one in this set to calculate the first change
+        # But for simplicity, we'll just track it within this set
+        for obs in sorted(observations, key=lambda x: x['d']):
             date = obs['d']
             val_2y = obs.get(SERIES_2Y, {}).get('v')
             val_5y = obs.get(SERIES_5Y, {}).get('v')
@@ -158,7 +169,8 @@ def update_dashboard_data():
             
             # If target rate exists, update events
             if val_target:
-                update_event_outcomes(date, val_target)
+                update_event_outcomes(date, val_target, prev_target)
+                prev_target = val_target
             
             if val_2y and val_5y:
                 y2 = float(val_2y)
