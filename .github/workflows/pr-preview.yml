@@ -9,6 +9,7 @@ on:
       - 'pulse_check.py'
       - 'generate_summary.py'
       - '.github/workflows/pr-preview.yml'
+  workflow_dispatch: # Allows manual triggers
 
 permissions:
   contents: write
