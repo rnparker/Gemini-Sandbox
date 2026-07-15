@@ -214,8 +214,8 @@
       "date": "2026-07-15",
       "label": "BoC",
       "type": "boc",
-      "outcome": null,
-      "details": null
+      "outcome": "Hold",
+      "details": "The Bank of Canada maintained the overnight rate, citing concerns over persistent services inflation and the need to ensure price stability despite cooling headline figures."
     },
     {
       "date": "2026-07-21",
