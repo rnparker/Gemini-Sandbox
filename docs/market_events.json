@@ -221,8 +221,8 @@
       "date": "2026-07-21",
       "label": "CPI",
       "type": "cpi",
-      "outcome": null,
-      "details": null
+      "outcome": "2.2%",
+      "details": "Headline inflation cooled to 2.2%, though persistent core and services inflation prevented a significant downward move in bond yields."
     },
     {
       "date": "2026-08-18",
