@@ -228,8 +228,8 @@
       "date": "2026-08-18",
       "label": "CPI",
       "type": "cpi",
-      "outcome": null,
-      "details": null
+      "outcome": "2.3%",
+      "details": "Canadian inflation accelerated slightly to 2.3% year-over-year in July, driven by persistent shelter costs and services, firming the case for a restrictive policy stance."
     },
     {
       "date": "2026-09-02",
