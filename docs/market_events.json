@@ -235,8 +235,8 @@
       "date": "2026-09-02",
       "label": "BoC",
       "type": "boc",
-      "outcome": null,
-      "details": null
+      "outcome": "Hold",
+      "details": "The Bank of Canada maintained its policy rate while signaling that robust Q2 GDP growth and persistent service inflation necessitate a restrictive stance for the foreseeable future."
     },
     {
       "date": "2026-09-22",
