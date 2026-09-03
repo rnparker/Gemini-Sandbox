@@ -20,6 +20,24 @@ RATEHUB_URL = "https://api.ratehub.ca/mortgage-rates/all/purchase-rates?amortiza
 CSV_FILE = os.getenv("SPREAD_CSV_PATH", "docs/historical_spread.csv")
 EVENTS_FILE = os.getenv("MARKET_EVENTS_PATH", "docs/market_events.json")
 
+# Numeric columns of the historical CSV, in write order after 'date'.
+NUMERIC_FIELDS = ('yield_2y', 'yield_5y', 'repo_rate', 'spread', 'mortgage_5y', 'lending_margin')
+
+
+class HistoricalDataError(Exception):
+    """
+    Raised when the historical CSV exists but cannot be read completely.
+
+    Callers must treat this as "abort", never as "no history": the CSV is
+    rewritten from whatever get_all_rows() returns, so a partial read that is
+    mistaken for an empty file destroys every record it failed to reach.
+    """
+
+
+def is_number(value):
+    """True if value is a usable numeric reading (not a preserved bad cell)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
 def update_event_outcomes(date, target_rate, prev_target_rate=None):
     """
     Updates market_events.json with the outcome of a BoC meeting.
@@ -94,30 +112,77 @@ def get_best_5y_fixed():
         print(f"❌ Error fetching Ratehub data: {e}")
         return None
 
+def parse_row(row, filename, line_num):
+    """
+    Converts one CSV row to typed values.
+
+    A cell that will not parse as a float is preserved verbatim instead of being
+    dropped, so one bad value costs at most that value - never the observation,
+    and never the rows that follow it.
+    """
+    parsed = {'date': row['date']}
+    for field in NUMERIC_FIELDS:
+        raw = row.get(field)
+        if raw is None or raw == '':
+            parsed[field] = None
+            continue
+        try:
+            parsed[field] = float(raw)
+        except (TypeError, ValueError):
+            print(f"⚠️ Warning: {filename} line {line_num}: could not parse {field}={raw!r}. Preserving the original value.")
+            parsed[field] = raw
+    return parsed
+
+def count_existing_dates(filename):
+    """
+    Counts distinct observation dates on disk.
+
+    Deliberately does not reuse get_all_rows(): the write guard has to stay
+    independent of the parsing path it is meant to catch mistakes in.
+    """
+    if not os.path.exists(filename):
+        return 0
+
+    try:
+        with open(filename, mode='r', newline='', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            if not header or 'date' not in header:
+                raise HistoricalDataError(f"{filename} has no 'date' column (header: {header})")
+            date_col = header.index('date')
+            return len({row[date_col] for row in reader if len(row) > date_col and row[date_col]})
+    except HistoricalDataError:
+        raise
+    except Exception as e:
+        raise HistoricalDataError(f"Could not count observations in {filename}: {e}") from e
+
 def get_all_rows(filename):
     """
     Reads the existing CSV and returns a list of dictionaries.
+
+    Returns [] only when the file genuinely does not exist yet. Any failure to
+    read an existing file raises HistoricalDataError rather than returning a
+    partial list, because the caller rewrites the CSV from this result.
     """
-    rows = []
     if not os.path.exists(filename):
-        return rows
-    
+        return []
+
+    rows = []
     try:
         with open(filename, mode='r', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
+            if not reader.fieldnames or 'date' not in reader.fieldnames:
+                raise HistoricalDataError(f"{filename} has no 'date' column (header: {reader.fieldnames})")
             for row in reader:
-                rows.append({
-                    'date': row['date'],
-                    'yield_2y': float(row['yield_2y']) if row.get('yield_2y') else None,
-                    'yield_5y': float(row['yield_5y']) if row.get('yield_5y') else None,
-                    'repo_rate': float(row['repo_rate']) if row.get('repo_rate') else None,
-                    'spread': float(row['spread']) if row.get('spread') else None,
-                    'mortgage_5y': float(row['mortgage_5y']) if row.get('mortgage_5y') else None,
-                    'lending_margin': float(row['lending_margin']) if row.get('lending_margin') else None
-                })
+                if not row.get('date'):
+                    print(f"⚠️ Warning: {filename} line {reader.line_num}: skipping row with no date.")
+                    continue
+                rows.append(parse_row(row, filename, reader.line_num))
+    except HistoricalDataError:
+        raise
     except Exception as e:
-        print(f"⚠️ Warning: Could not read existing file {filename}: {e}")
-    
+        raise HistoricalDataError(f"Could not read {filename}: {e}") from e
+
     return rows
 
 def update_dashboard_data():
@@ -145,12 +210,12 @@ def update_dashboard_data():
         all_rows = get_all_rows(CSV_FILE)
         existing_data = {row['date']: row for row in all_rows}
         
-        best_mortgage = None
-        latest_row = existing_data.get(latest_date)
-        
-        if latest_row and latest_row.get('mortgage_5y') is not None:
+        latest_row = existing_data.get(latest_date) or {}
+        cached_mortgage = latest_row.get('mortgage_5y')
+
+        if is_number(cached_mortgage):
             print(f"✨ Latest observation date {latest_date} already has mortgage data in CSV. Skipping Ratehub API call.")
-            best_mortgage = latest_row['mortgage_5y']
+            best_mortgage = cached_mortgage
         else:
             best_mortgage = get_best_5y_fixed()
 
@@ -206,11 +271,13 @@ def update_dashboard_data():
                     # Only update if current data is incomplete or changed
                     current = existing_data[date]
                     needs_update = False
-                    if current.get('mortgage_5y') is None and best_mortgage is not None:
+                    # A cell preserved as a raw string is not a usable reading,
+                    # so treat it like a gap and let fresh data heal it.
+                    if not is_number(current.get('mortgage_5y')) and best_mortgage is not None:
                         needs_update = True
                     elif current.get('yield_5y') != y5:
                         needs_update = True
-                    elif current.get('repo_rate') is None and repo_rate is not None:
+                    elif not is_number(current.get('repo_rate')) and repo_rate is not None:
                         needs_update = True
                     
                     if needs_update:
@@ -225,6 +292,13 @@ def update_dashboard_data():
         # 4. Prepare sorted output
         sorted_rows = [existing_data[d] for d in sorted(existing_data.keys())]
 
+        # Sanity Check: the history only ever grows. Compare against a count taken
+        # straight from disk so a faulty read cannot vouch for its own output.
+        existing_count = count_existing_dates(CSV_FILE)
+        if len(sorted_rows) < existing_count:
+            print(f"❌ Refusing to write {CSV_FILE}: would shrink from {existing_count} to {len(sorted_rows)} observations. Existing data left unchanged.")
+            return False
+
         # Ensure directory exists
         os.makedirs(os.path.dirname(CSV_FILE), exist_ok=True)
 
@@ -238,7 +312,10 @@ def update_dashboard_data():
         
         print(f"📁 Dashboard data updated and sorted: {CSV_FILE}")
         return data_changed
-            
+
+    except HistoricalDataError as e:
+        print(f"❌ Aborting update to protect existing data: {e}")
+        return False
     except Exception as e:
         print(f"❌ Error updating dashboard data: {e}")
         return False
