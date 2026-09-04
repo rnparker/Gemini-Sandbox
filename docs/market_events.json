@@ -229,14 +229,14 @@
       "label": "CPI",
       "type": "cpi",
       "outcome": "2.3%",
-      "details": "Statistics Canada reported a marginal acceleration in headline inflation to 2.3%, driven by persistent services costs."
+      "details": "Statistics Canada reported headline CPI at 2.3%, reinforcing the need for restrictive monetary policy."
     },
     {
       "date": "2026-09-02",
       "label": "BoC",
       "type": "boc",
       "outcome": "Hold",
-      "details": "The Bank of Canada maintained the overnight rate target while reinforcing a 'higher-for-longer' stance due to sticky core inflation and robust Q2 GDP data."
+      "details": "The Bank of Canada maintained the overnight rate but adopted a hawkish 'higher-for-longer' narrative regarding core inflation."
     },
     {
       "date": "2026-09-22",
