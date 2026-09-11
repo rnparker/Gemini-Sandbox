@@ -229,14 +229,14 @@
       "label": "CPI",
       "type": "cpi",
       "outcome": "2.3%",
-      "details": "Statistics Canada reported headline CPI at 2.3%, contributing to the upward pressure on short-term yields and hawkish policy expectations."
+      "details": "Statistics Canada reported annual inflation at 2.3%, contributing to the upward pressure on sovereign yields."
     },
     {
       "date": "2026-09-02",
       "label": "BoC",
       "type": "boc",
       "outcome": "Hold",
-      "details": "The Bank of Canada maintained the overnight rate target while reinforcing a hawkish narrative regarding sticky core inflation."
+      "details": "The Bank of Canada maintained the overnight rate target while reinforcing a hawkish stance due to persistent core inflation."
     },
     {
       "date": "2026-09-22",
